@@ -1,24 +1,29 @@
-
 from pathlib import Path
+import environ
+from datetime import timedelta
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
+
+env = environ.Env()
+environ.Env.read_env()
+
+
+
 SECRET_KEY = 'django-insecure-f$hk^nfn)q)9!di(p&!f6j-$)2#h*z+_ks&fsdf3t)bv@i4*e5'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -26,11 +31,24 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'rest_framework',
-    'corsheaders',
+]
 
+# In build apps
+INSTALLED_APPS += [
     "authentication"
 ]
+
+# Third party apps
+INSTALLED_APPS += [
+    'rest_framework',
+    'corsheaders',
+    'cloudinary',
+    'cloudinary_storage',
+]
+
+
+AUTH_USER_MODEL = "authentication.UserAccount"
+
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -141,3 +159,45 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOW_CREDENTIALS = True
 ALLOWED_HOSTS = ["*"]
 CORS_ALLOW_ALL_ORIGINS = True
+
+
+
+
+
+# # cloudinary setup
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': env('CLOUD_NAME'),
+    'API_KEY': env('CLOUDINARY_API_KEY'),
+    'API_SECRET': env('CLOUDINARY_API_SECRET')
+}
+
+# cloudinary.config(
+#     cloud_name = CLOUDINARY_STORAGE['CLOUD_NAME'], 
+#     api_key = CLOUDINARY_STORAGE['API_KEY'], 
+#     api_secret = CLOUDINARY_STORAGE['API_SECRET']
+# )   
+
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+
+# # stripe setup
+# STRIPE_SECRET_KEY = env("STRIPE_SECRET_KEY")
+# STRIPE_PUBLIC_KEY = env("STRIPE_PUBLIC_KEY")
+# STRIPE_WEBHOOK_SECRET = env("STRIPE_WEBHOOK_SECRET")
+# DOMAIN_URL = "https://ballmastery.com"
+
+# # google login
+# GOOGLE_CLIENT_ID = env('GOOGLE_CLIENT_ID')
+# GOOGLE_CLIENT_SECRET = env('GOOGLE_CLIENT_SECRET')
+# GOOGLE_REDIRECT_URI = env('GOOGLE_REDIRECT_URI')
+
+
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=10),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=17),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': False,
+    'ALGORITHM': 'HS256',
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'SIGNING_KEY': env('SIGNING_KEY'),
+}
