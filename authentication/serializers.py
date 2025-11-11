@@ -13,6 +13,6 @@ class RegisterSerializer(serializers.Serializer):
 
     class Meta:
         model = User
-        fields = [""]
+        fields = ["fullname"]
 
     
