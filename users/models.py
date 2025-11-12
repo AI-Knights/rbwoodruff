@@ -12,21 +12,23 @@ User = get_user_model()
 
 
 class GeneralUser(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='general_user')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='general_users')
     phone_number = models.CharField()
 
 class ReferredUser(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='referred_user')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='referred_users')
     phone_number = models.CharField()
     count_name = models.CharField()
     case_name = models.CharField()
 
 class Employer(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='employers')
     company_name = models.CharField()
     office_location = models.CharField()
 
 
 class TrainingProvider(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='training_providers')
     specialization = models.CharField()
     experience = models.CharField()
     skills = ArrayField(models.CharField(max_length=50, blank=True, default=list))
@@ -34,6 +36,7 @@ class TrainingProvider(models.Model):
 
 
 class Agency(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='agencys')
     agency_id = models.CharField()
     agency_name = models.CharField()
     address = models.CharField()
