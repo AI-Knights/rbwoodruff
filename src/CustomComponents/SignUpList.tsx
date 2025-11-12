@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import LogoImage from "@/assets/logo (2).svg";
 import Employe from "@/assets/emploer.svg"
 import Trainer from "@/assets/Trainer.svg";
 import Link from "next/link";
@@ -32,27 +31,15 @@ export default function SignUpList() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#EDEDED] flex flex-col items-center justify-center p-6">
-      {/* Logo & Tagline */}
-      <div className="mb-12 text-center">
-        <Image
-          src={LogoImage}
-          alt="NEWORKX Logo"
-          width={380}
-          height={78}
-          className="mx-auto mb-2"
-          priority
-        />
+    <div className="  flex flex-col items-center justify-center">
      
-      </div>
-
       {/* Role Selection Cards */}
     <div>
-          <div className="w-full max-w-3xl  space-y-6">
+          <div className="w-full flex flex-col gap-4">
         {roles.map((role, index) => (
           <div
             key={index}
-            className=" rounded-md border border-black p-10 hover:shadow-xl transition-shadow duration-300 cursor-pointer"
+            className=" rounded-md w-full border border-black p-10 hover:shadow-xl transition-shadow duration-300 "
           >
             <div className="flex items-start gap-4">
               <div className=" w-12 h-12  rounded-xl flex items-center justify-center">
@@ -68,7 +55,7 @@ export default function SignUpList() {
               </div>
             </div>
             <div>
-                <Link className="" href={`/register/${role.path}`} >
+                <Link className="" href={`/auth/register/${role.path}`} >
                     <div className="mt-5 w-full text-center bg-[#6A0DAD] hover:bg-purple-700 text-white font-medium py-3 px-4 rounded-md transition-colors duration-200">  
                         Proceed
                     </div>
@@ -77,13 +64,6 @@ export default function SignUpList() {
           </div>
         ))}
       </div>
-
-        <div className="">
-          <div  className="h-[300px] w-[600px] bg-[#3A47B0] rounded-xl"></div>
-          <div className="h-[200px] w-[500px] bg-[#5F6EFF] rounded-xl"></div>
-          <div className="h-[628px] bg-[#5291F2] rounded-xl w-[580px] "></div>
-          <div className="h-[628px] bg-[#5291F2] rounded-xl w-[580px] " ></div>
-        </div>
     </div>
 
      
