@@ -1,4 +1,4 @@
-export type JobSeeker = {
+export interface JobSeeker {
   id: string;
   name: string;
   skills: string;

@@ -88,7 +88,7 @@ const JobSeekersTable = () => {
   };
 
   return (
-    <div className="w-full min-h-[calc(100vh-100px)] bg-white p-4 md:p-6 lg:p-8">
+    <div className="lg:max-w-2xl xl:max-w-[1920px] mx-auto min-h-[calc(100vh-170px)] bg-white p-4 md:p-6 lg:p-8">
       <div className="space-y-4">
         {/* Header Section */}
         <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
@@ -114,7 +114,7 @@ const JobSeekersTable = () => {
         </div>
 
         {/* Desktop Table View */}
-        <div className="hidden md:block bg-white rounded-lg shadow overflow-hidden">
+        <div className="hidden md:block bg-white rounded-lg shadow overflow-x-scroll">
           <Table>
             <TableHeader>
               <TableRow>

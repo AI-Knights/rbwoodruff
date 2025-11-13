@@ -88,7 +88,7 @@ const TraineesTable = () => {
   };
 
   return (
-    <div className="w-full min-h-[calc(100vh-100px)] bg-white p-4 md:p-6 lg:p-8">
+    <div className="w-full min-h-[calc(100vh-170px)] bg-white p-4 md:p-6 lg:p-8">
       <div className="space-y-4">
         {/* Header Section */}
         <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
