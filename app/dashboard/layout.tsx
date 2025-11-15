@@ -1,4 +1,4 @@
-import { AdminLayout } from "@/components/dashboard/AdminLayout";
+import { AdminLayout } from "@/components/adminDashboard/AdminLayout";
 
 export default function RootLayout({
   children,

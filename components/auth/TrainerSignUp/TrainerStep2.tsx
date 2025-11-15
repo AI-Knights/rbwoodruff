@@ -4,6 +4,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { trainerStep2Schema, type TrainerStep2 } from "@/validation";
 import { Button } from "@/components/ui/button";
+import { FaSkiingNordic } from "react-icons/fa";
+
 import {
   Form,
   FormControl,
@@ -87,7 +89,10 @@ export default function TrainerSecond({
               <FormItem>
                 <FormControl>
                   <div className="relative">
-                    <Clock className="absolute left-0 top-3 h-5 w-5 text-gray-500" />
+                    <div className="w-fit absolute left-0 top-3 h-5  text-gray-500" >
+                      <FaSkiingNordic />
+
+                    </div>
 
                     <Input
                       placeholder="Add skills"
