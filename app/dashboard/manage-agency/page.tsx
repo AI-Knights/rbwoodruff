@@ -1,4 +1,4 @@
-import ManageAgenciesTable from '@/components/dashboard/Agency/ManageAgenciesTable'
+import ManageAgenciesTable from '@/components/adminDashboard/Agency/ManageAgenciesTable'
 
 function page() {
   return (

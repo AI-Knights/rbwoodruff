@@ -1,4 +1,4 @@
-import PaymentHistoryTable from "@/components/dashboard/Payment/PaymentHistoryTable";
+import PaymentHistoryTable from "@/components/adminDashboard/Payment/PaymentHistoryTable";
 
 function page() {
   return (

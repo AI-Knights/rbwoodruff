@@ -1,9 +1,12 @@
 import Image from 'next/image'
 import Link from 'next/link'
 
-function Logo() {
+interface logoProps{
+  href?: string;
+}
+function Logo({href="/dashboard"}:logoProps) {
   return (
-    <Link href={"/dashboard"}>
+    <Link href={href}>
     <div className='cursor-pointer'>
       <Image
       src={"/logo.png"}

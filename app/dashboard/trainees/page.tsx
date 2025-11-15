@@ -1,4 +1,4 @@
-import TraineesTable from '@/components/dashboard/Trainees/TraineesTable'
+import TraineesTable from '@/components/adminDashboard/Trainees/TraineesTable'
 import React from 'react'
 
 function page() {

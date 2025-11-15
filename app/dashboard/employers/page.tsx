@@ -1,4 +1,4 @@
-import EmployerTable from '@/components/dashboard/Employers/EmployersTable'
+import EmployerTable from '@/components/adminDashboard/Employers/EmployersTable'
 import React from 'react'
 
 function page() {

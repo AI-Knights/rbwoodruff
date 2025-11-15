@@ -1,4 +1,4 @@
-import JobSeekersTable from '@/components/dashboard/JobSeekers/JobSeekersTable'
+import JobSeekersTable from '@/components/adminDashboard/JobSeekers/JobSeekersTable'
 import React from 'react'
 
 function page() {

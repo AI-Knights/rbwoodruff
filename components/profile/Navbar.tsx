@@ -1,8 +1,18 @@
 "use client";
 import { usePathname } from "next/navigation";
-import { Menu } from "lucide-react";
+import { Bell, CircleCheck, Info, Menu } from "lucide-react";
 import { Button } from "../ui/button";
 import ProfileDropdown from "./ProfileDropdown";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import Link from "next/link";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
 
 const Navbar = ({ onMenuClick }: { onMenuClick?: () => void }) => {
   const pathname = usePathname();
@@ -20,7 +30,9 @@ const Navbar = ({ onMenuClick }: { onMenuClick?: () => void }) => {
       profile: "Profile",
       "manage-question": "Manage Question",
       "quiz-configuration": "Quiz Configuration",
-      settings: "Profile",
+      "profile-admin": "Admin Profile",
+      "profile-employer": "Employer Profile",
+      security: "Security"
     };
 
     // Check if we're on a nested route under manage-question
@@ -50,16 +62,13 @@ const Navbar = ({ onMenuClick }: { onMenuClick?: () => void }) => {
           )}
           {/* <Logo /> */}
         </div>
-        <div className="flex items-center justify-between space-x-4">
+        <div className="w-full">
           {/* Mobile Menu Button - Only visible on mobile/tablet */}
 
           <h1 className="text-lg md:text-3xl font-semibold text-gray-800">
             {getPageTitle(pathname)}
-          </h1>
-
-          {/* Right side - Profile */}
+          </h1>          
         </div>
-        <ProfileDropdown />
       </div>
     </nav>
   );

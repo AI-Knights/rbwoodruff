@@ -1,4 +1,4 @@
-import TrainerTable from '@/components/dashboard/Trainer/TrainerTable'
+import TrainerTable from '@/components/adminDashboard/Trainer/TrainerTable'
 import React from 'react'
 
 function page() {
