@@ -78,7 +78,7 @@ export default function TraingProvider({
           />
         </div>
       </div>
-      <div className=" h-screen  mt-2 grid grid-cols-12 gap-3 p-8">
+      <div className=" h-fit  mt-2 grid grid-cols-12 gap-3 p-8">
         <div className="col-span-10 ">
           <ActivitesCard data={activies}></ActivitesCard>
 

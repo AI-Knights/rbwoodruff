@@ -30,8 +30,8 @@ function ConfirmationDialog({
 
         <div className="py-4 text-sm text-muted-foreground">{subtitle}</div>
 
-        <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="outline" onClick={() => setOpen(false)}>
+        <DialogFooter className="gap-5 w-fit mx-auto flex flex-row  sm:gap-0">
+          <Button className="mx-6" variant="outline" onClick={() => setOpen(false)}>
             No
           </Button>
           <Button

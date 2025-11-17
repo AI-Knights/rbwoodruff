@@ -19,6 +19,7 @@ import { Download, Eye, SearchIcon } from "lucide-react";
 import LearnerProfile, { Learner } from "../LearnersProfile/LearnerProfile";
 import { Button } from "@/components/ui/button";
 import ConfirmationDialog from "@/components/elements/ConfirmationDialog";
+import AddTraining from "../AddTraining/AddTraining";
 const invoices = [
   {
     name: "Ayesha Rahman",
@@ -90,7 +91,8 @@ export default function LearnerTable() {
           </InputGroup>
         </div>
         <div>
-          
+       
+          <AddTraining></AddTraining>
         </div>
       </div>
 

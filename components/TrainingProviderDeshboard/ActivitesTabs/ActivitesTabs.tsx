@@ -6,6 +6,7 @@ import { IoBusiness } from "react-icons/io5";
 import { FiUsers } from "react-icons/fi";
 import { useState } from "react";
 import LearnerTable from "../LearnerTable/LearnerTable";
+import ProgramAnalytics from "../ProgramAnalytics/ProgramAnalytics";
 
 export default function ActivitesTabs() {
   const tablist = [
@@ -21,7 +22,6 @@ export default function ActivitesTabs() {
       value: "employer_linkages",
     },
   ];
-  const [list, setList] = useState(tablist);
 
   return (
     <div>
@@ -45,6 +45,9 @@ export default function ActivitesTabs() {
             </div>
             <TabsContent value={"learner_overview"} className="mt-6">
               <LearnerTable></LearnerTable>
+            </TabsContent>
+            <TabsContent value={"program_analytics"} className="mt-6">
+              <ProgramAnalytics></ProgramAnalytics>
             </TabsContent>
           </Tabs>
         </div>
