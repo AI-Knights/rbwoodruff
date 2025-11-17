@@ -1,4 +1,4 @@
-import { EmployerLayout } from "@/components/employerDashboard/EmployerLayout";
+import { AgencyLayout } from "@/components/agencyDashboard/AgencyLayout";
 import { Toaster } from "sonner";
 
 export default function RootLayout({
@@ -8,10 +8,12 @@ export default function RootLayout({
 }) {
   return (
     <section className="max-w-[1920px] mx-auto">
-      <EmployerLayout>
+      <AgencyLayout>
         <Toaster/>
-        {children}
-        </EmployerLayout>
+        <div className="p-4 lg:p-0">
+          {children}
+        </div>
+        </AgencyLayout>
     </section>
   );
 }

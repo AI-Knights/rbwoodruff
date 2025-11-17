@@ -3,7 +3,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/ca
 import { Users, BookOpen, Clock, TrendingUp, DollarSign, Wallet } from 'lucide-react';
 
 // Types
-interface OverviewCardData {
+export interface OverviewCardData {
   title: string;
   value: string | number;
   description: string;
