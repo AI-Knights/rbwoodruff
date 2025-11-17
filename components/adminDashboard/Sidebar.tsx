@@ -106,7 +106,7 @@ const Sidebar = ({
                   <li key={route.path}>
                     <Link
                       href={route.path}
-                      onClick={() => onClose()} // Close sidebar on mobile when clicking a link
+                      onClick={() => onClose()}
                       className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
                         isActive
                           ? "bg-blue-50 text-blue-600"

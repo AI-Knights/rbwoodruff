@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 
 export default function WelcomePage() {
   const gotoDashBoard = ()=>{
-    redirect('/dashboard')
+    const role = localStorage.getItem('role')
+    redirect(role ==='agency'?'/agency-dashboard':role==='trainer'?'/training-provider-dashboard':role==='employer'?'/employer-dashboard':'/dashboard')
   }
   return (
     <div>

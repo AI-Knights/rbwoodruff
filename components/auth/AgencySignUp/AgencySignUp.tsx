@@ -21,10 +21,10 @@ export default function AgencySignUp() {
 
     const fullData = { ...agencyDataSetpOne, ...data };
 
-    // Validate full data
     const result = agencySignUp.safeParse(fullData);
     if (result.success) {
       console.log("Final Data:", result.data);
+      localStorage.setItem('role',"agency");
       redirect("/auth/verification");
     } else {
       console.error("Validation failed:", result.error);

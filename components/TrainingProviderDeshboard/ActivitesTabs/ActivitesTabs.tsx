@@ -6,6 +6,9 @@ import { IoBusiness } from "react-icons/io5";
 import { FiUsers } from "react-icons/fi";
 import { useState } from "react";
 import LearnerTable from "../LearnerTable/LearnerTable";
+import EmployerList from "../EmployerList/EmployerList";
+import { MdModelTraining } from "react-icons/md";
+import TrainingLists from "../TrainingLists/TrainingLists";
 import ProgramAnalytics from "../ProgramAnalytics/ProgramAnalytics";
 
 export default function ActivitesTabs() {
@@ -21,6 +24,11 @@ export default function ActivitesTabs() {
       icon: <IoBusiness />,
       value: "employer_linkages",
     },
+    {
+      name: "Trainings",
+      icon: <MdModelTraining />,
+      value: "trainings",
+    },
   ];
 
   return (
@@ -28,7 +36,7 @@ export default function ActivitesTabs() {
       <div className="w-full p-6">
         <div className=" w-full">
           <Tabs className="w-full " defaultValue="learner_overview">
-            <div className="flex flex-row justify-between px-4 py-1 rounded-full w-full bg-gray-200">
+            <div className="flex flex-col lg:flex-row justify-between px-4 py-1 lg:rounded-full w-full bg-gray-200">
               {tablist.map((data, index) => (
                 <TabsList className="bg-transparent" key={index}>
                   <TabsTrigger
@@ -48,6 +56,12 @@ export default function ActivitesTabs() {
             </TabsContent>
             <TabsContent value={"program_analytics"} className="mt-6">
               <ProgramAnalytics></ProgramAnalytics>
+            </TabsContent>
+            <TabsContent value={"employer_linkages"} className="mt-6">
+              <EmployerList></EmployerList>
+            </TabsContent>
+            <TabsContent value={"trainings"} className="mt-6">
+              <TrainingLists></TrainingLists>
             </TabsContent>
           </Tabs>
         </div>

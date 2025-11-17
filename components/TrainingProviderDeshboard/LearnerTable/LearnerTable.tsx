@@ -99,12 +99,12 @@ export default function LearnerTable() {
       <Table className="bg-white p-4 rounded-md mt-2">
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[100px]">Learner Name</TableHead>
-            <TableHead>Program</TableHead>
-            <TableHead>Start Date</TableHead>
-            <TableHead className="text-center">Status</TableHead>
-            <TableHead className="text-center">Certificate</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
+            <TableHead  className=" font-bold w-[100px]"  >Learner Name</TableHead>
+            <TableHead  className=" font-bold" >Program</TableHead>
+            <TableHead  className=" font-bold" >Start Date</TableHead>
+            <TableHead className="text-center font-bold">Status</TableHead>
+            <TableHead className="text-center font-bold">Certificate</TableHead>
+            <TableHead className="text-right font-bold">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

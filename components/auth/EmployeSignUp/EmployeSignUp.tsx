@@ -40,6 +40,7 @@ export default function EmployeSignUp() {
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     console.log(values);
+    localStorage.setItem("role" , "employer")
     redirect('/auth/verification')
   }
   return (

@@ -35,7 +35,7 @@ export default function SignIn() {
 
   function onSubmit(values: z.infer<typeof signIn>) {
     console.log(values);
-    redirect("/auth/welcome");
+    redirect("/dashboard");
   }
   return (
     <div>
@@ -110,9 +110,17 @@ export default function SignIn() {
             </Button>
           </form>
         </Form>
-        <Link href={'/auth/forgot-password'} className="text-center">Forgot password?</Link>
+        <Link href={"/auth/forgot-password"} className="text-center">
+          Forgot password?
+        </Link>
       </div>
-      <div className="text-center py-5 md:py-10" >Don’t have an account? <Link className="font-bold" href={"/auth"} > Sign Up</Link> </div>
+      <div className="text-center py-5 md:py-10">
+        Don’t have an account?{" "}
+        <Link className="font-bold" href={"/auth"}>
+          {" "}
+          Sign Up
+        </Link>{" "}
+      </div>
     </div>
   );
 }

@@ -23,6 +23,7 @@ export default function TrainerSignUp() {
     const result = trainerSignUp.safeParse(fullData);
     if (result.success) {
       console.log("Final Data:", result.data);
+      localStorage.setItem('role' , 'trainer')
         redirect("/auth/verification");
 
 

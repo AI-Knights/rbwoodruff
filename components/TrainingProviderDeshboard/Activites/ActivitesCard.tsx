@@ -11,7 +11,7 @@ interface ActiviteType {
 
 export default function ActivitesCard({ data }: { data: ActiviteType[] }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 p-4">
+    <div className="grid grid-cols-1  sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4 p-4">
       {data.map((item, index) => {
         return (
           <div
@@ -23,7 +23,7 @@ export default function ActivitesCard({ data }: { data: ActiviteType[] }) {
             </p>
 
             <div className="text-2xl flex flex-row gap-4 items-center justify-start w-full  font-bold text-gray-800">
-              <p className={`text-${item.iconColor}-500`}> {item.icon}</p>
+              <p className={`text-[${item.iconColor}]`}> {item.icon}</p>
               <p className="text-3xl" >{item.value}</p>
             </div>
 

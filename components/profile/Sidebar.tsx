@@ -42,7 +42,7 @@ const Sidebar = ({
   };
 
   const handleLogout =()=>{
-    router.push("/")
+    router.push("/auth")
   }
 
   return (
