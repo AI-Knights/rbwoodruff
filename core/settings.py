@@ -1,5 +1,6 @@
 from pathlib import Path
 import environ
+
 from datetime import timedelta
 
 
@@ -35,7 +36,8 @@ INSTALLED_APPS = [
 
 # In build apps
 INSTALLED_APPS += [
-    "authentication"
+    "authentication",
+    "users"
 ]
 
 # Third party apps
@@ -44,6 +46,7 @@ INSTALLED_APPS += [
     'corsheaders',
     'cloudinary',
     'cloudinary_storage',
+    'rest_framework_simplejwt'
 ]
 
 
@@ -93,8 +96,8 @@ WSGI_APPLICATION = 'core.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'test',       
-        'USER': 'postgres',     
+        'NAME': 'rbwoodroff',       
+        'USER': 'jamil',     
         'PASSWORD': 'postgres',    
         'HOST': 'localhost',         
         'PORT': '5432',              
@@ -165,11 +168,11 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 
 # # cloudinary setup
-CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': env('CLOUD_NAME'),
-    'API_KEY': env('CLOUDINARY_API_KEY'),
-    'API_SECRET': env('CLOUDINARY_API_SECRET')
-}
+# CLOUDINARY_STORAGE = {
+#     'CLOUD_NAME': env('CLOUD_NAME'),
+#     'API_KEY': env('CLOUDINARY_API_KEY'),
+#     'API_SECRET': env('CLOUDINARY_API_SECRET')
+# }
 
 # cloudinary.config(
 #     cloud_name = CLOUDINARY_STORAGE['CLOUD_NAME'], 

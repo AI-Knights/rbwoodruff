@@ -39,7 +39,7 @@ class UserAccount(AbstractBaseUser, PermissionsMixin):
     full_name = models.CharField(max_length=50)
     profile_pic = CloudinaryField('profile_pic', blank=True, null=True)
 
-    role = models.CharField(max_length=20, choices=[
+    user_type = models.CharField(max_length=20, choices=[
         ('general', 'General'),
         ('agency_referred', 'Agency Referred'),
         ('employer', 'Employer'),

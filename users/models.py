@@ -18,7 +18,7 @@ class GeneralUser(models.Model):
 class ReferredUser(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='referred_users')
     phone_number = models.CharField()
-    count_name = models.CharField()
+    court_name = models.CharField()
     case_name = models.CharField()
 
 class Employer(models.Model):
