@@ -19,5 +19,22 @@ from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('auth/', include('authentication.urls'), name="authentication")
+    
+    # Authentication & Payment
+    path('auth/', include('authentication.urls')),
+    
+    # Job Seekers / Users
+    path('users/', include('users.urls')),
+    
+    # Employers
+    path('employer/', include('employer.urls')),
+    
+    # Training Providers
+    path('trainer/', include('trainer.urls')),
+    
+    # Agencies
+    path('agency/', include('agency.urls')),
+    
+    # Super Admin
+    path('admin-panel/', include('adminpanel.urls')),
 ]

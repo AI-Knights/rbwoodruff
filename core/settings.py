@@ -37,7 +37,11 @@ INSTALLED_APPS = [
 # In build apps
 INSTALLED_APPS += [
     "authentication",
-    "users"
+    "users",
+    "agency",
+    "employer", 
+    "trainer",
+    "adminpanel"
 ]
 
 # Third party apps
@@ -83,13 +87,19 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
+# Email configuration - Console backend for development
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = 'neworkx@platform.com'
+OTP_VALIDITY_DURATION = 5  # minutes
+
+# For production, use SMTP:
 # EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 # EMAIL_HOST = 'smtp.resend.com'
 # EMAIL_PORT = 2587
 # EMAIL_USE_TLS = True
 # EMAIL_HOST_USER = 'resend'
-# EMAIL_HOST_PASSWORD = 're_13RCPBWu_421udYzMwbk1v3cNSVA8KDLg'
-# DEFAULT_FROM_EMAIL = 'onboarding@resend.dev'
+# EMAIL_HOST_PASSWORD = env('EMAIL_PASSWORD')
+# DEFAULT_FROM_EMAIL = 'neworkx@platform.com'
 
 
 
@@ -167,26 +177,28 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 
 
-# # cloudinary setup
-# CLOUDINARY_STORAGE = {
-#     'CLOUD_NAME': env('CLOUD_NAME'),
-#     'API_KEY': env('CLOUDINARY_API_KEY'),
-#     'API_SECRET': env('CLOUDINARY_API_SECRET')
-# }
+# Cloudinary setup - For production, use env variables
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': env('CLOUD_NAME', default='demo'),
+    'API_KEY': env('CLOUDINARY_API_KEY', default=''),
+    'API_SECRET': env('CLOUDINARY_API_SECRET', default='')
+}
 
-# cloudinary.config(
-#     cloud_name = CLOUDINARY_STORAGE['CLOUD_NAME'], 
-#     api_key = CLOUDINARY_STORAGE['API_KEY'], 
-#     api_secret = CLOUDINARY_STORAGE['API_SECRET']
-# )   
+import cloudinary
+cloudinary.config(
+    cloud_name = CLOUDINARY_STORAGE['CLOUD_NAME'], 
+    api_key = CLOUDINARY_STORAGE['API_KEY'], 
+    api_secret = CLOUDINARY_STORAGE['API_SECRET']
+)   
 
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
-# # stripe setup
-# STRIPE_SECRET_KEY = env("STRIPE_SECRET_KEY")
-# STRIPE_PUBLIC_KEY = env("STRIPE_PUBLIC_KEY")
-# STRIPE_WEBHOOK_SECRET = env("STRIPE_WEBHOOK_SECRET")
-# DOMAIN_URL = "https://ballmastery.com"
+# Stripe setup - Using test mode for development
+STRIPE_SECRET_KEY = env("STRIPE_SECRET_KEY", default="sk_test_")
+STRIPE_PUBLIC_KEY = env("STRIPE_PUBLIC_KEY", default="pk_test_")
+STRIPE_WEBHOOK_SECRET = env("STRIPE_WEBHOOK_SECRET", default="")
+DOMAIN_URL = env("DOMAIN_URL", default="http://localhost:8000")
+REGISTRATION_FEE = 150.00  # USD
 
 # # google login
 # GOOGLE_CLIENT_ID = env('GOOGLE_CLIENT_ID')
