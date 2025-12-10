@@ -16,27 +16,30 @@ User = get_user_model()
 class GeneralUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = GeneralUser
-        fields = ["phone_number"]
+        fields = ["phone_number"]  # phone_number is required
 
 class ReferredUserSerializer(serializers.ModelSerializer):
     class Meta:
-        model=  ReferredUser
-        fields = ["phone_number", "court_name", "case_name"]
+        model = ReferredUser
+        fields = ["phone_number", "court_name", "case_name"]  # All required for court-referred users
 
 class EmployerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Employer
-        fields = ["company_name", "office_location", "industry"]
+        fields = ["company_name", "office_location", "industry"]  # company_name and office_location required
 
 class TrainingProviderSerializer(serializers.ModelSerializer):
     class Meta:
         model = TrainingProvider
-        fields = ["specialization", "experience", "skills", "bio"]
+        fields = ["specialization", "experience", "skills", "bio"]  # All required
 
 class AgencySerializer(serializers.ModelSerializer):
     class Meta:
         model = Agency
-        fields = ["agency_name", "agency_id", "address", "representative_name"]
+        fields = ["agency_name", "agency_id", "address", "representative_name"]  # All required except representative_name
+        extra_kwargs = {
+            'representative_name': {'required': False}  # Only this one is optional
+        }
 
 
 

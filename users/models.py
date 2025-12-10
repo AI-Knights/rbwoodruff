@@ -9,7 +9,7 @@ User = get_user_model()
 class GeneralUser(models.Model):
     """Profile for self-enrolled general job seekers"""
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='general_profile')
-    phone_number = models.CharField(max_length=20)
+    phone_number = models.CharField(max_length=20)  # Required
     
     # Payment tracking
     has_paid = models.BooleanField(default=False)
@@ -27,9 +27,9 @@ class GeneralUser(models.Model):
 class ReferredUser(models.Model):
     """Profile for agency-referred court users"""
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='referred_profile')
-    phone_number = models.CharField(max_length=20)
+    phone_number = models.CharField(max_length=20)  # Required
     
-    # Court information
+    # Court information - All required for court-referred users
     court_name = models.CharField(max_length=200)
     case_name = models.CharField(max_length=200)
     
@@ -63,9 +63,9 @@ class Employer(models.Model):
     
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='employer_profile')
     
-    company_name = models.CharField(max_length=200)
+    company_name = models.CharField(max_length=200)  # Required
     industry = models.CharField(max_length=50, choices=INDUSTRY_CHOICES, default='other')
-    office_location = models.CharField(max_length=200)
+    office_location = models.CharField(max_length=200)  # Required
     
     # Verification
     is_verified = models.BooleanField(default=False)
@@ -82,10 +82,10 @@ class TrainingProvider(models.Model):
     """Profile for training provider accounts"""
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='trainer_profile')
     
-    specialization = models.CharField(max_length=200)
-    experience = models.CharField(max_length=200, help_text="Years of experience or description")
-    skills = ArrayField(models.CharField(max_length=50), blank=True, default=list)
-    bio = models.TextField()
+    specialization = models.CharField(max_length=200)  # Required
+    experience = models.CharField(max_length=200, help_text="Years of experience or description")  # Required
+    skills = ArrayField(models.CharField(max_length=50))  # Required - must provide at least one skill
+    bio = models.TextField()  # Required
     
     # Verification
     is_verified = models.BooleanField(default=False)
@@ -113,10 +113,10 @@ class Agency(models.Model):
     
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='agency_profile')
     
-    agency_id = models.CharField(max_length=100, unique=True)
-    agency_name = models.CharField(max_length=200)
-    representative_name = models.CharField(max_length=200, default='')
-    address = models.CharField(max_length=300)
+    agency_id = models.CharField(max_length=100, unique=True)  # Required
+    agency_name = models.CharField(max_length=200)  # Required
+    representative_name = models.CharField(max_length=200, default='')  # Optional
+    address = models.CharField(max_length=300)  # Required
     
     # Verification documents (stored as Cloudinary URLs or file paths)
     verification_documents = models.JSONField(default=list, blank=True, help_text="URLs to court authorization and registration docs")

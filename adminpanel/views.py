@@ -15,7 +15,7 @@ from users.models import (
 )
 from authentication.models import UserAccount
 from .serializers import (
-    AdminDash boardSerializer, AgencyVerificationSerializer,
+    AdminDashboardSerializer, AgencyVerificationSerializer,
     EmployerVerificationSerializer, TrainerVerificationSerializer,
     UserListSerializer, PaymentListSerializer
 )
