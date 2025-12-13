@@ -100,6 +100,24 @@ class ApplicantListView(generics.ListAPIView):
         return queryset.order_by('-applied_at')
 
 
+class AllApplicantsView(generics.ListAPIView):
+    """List all applicants across all employer's jobs"""
+    serializer_class = ApplicantSerializer
+    permission_classes = [IsAuthenticated, IsEmployer]
+    
+    def get_queryset(self):
+        employer = self.request.user.employer_profile
+        status_filter = self.request.query_params.get('status', None)
+        
+        # Get all applications for all jobs posted by this employer
+        queryset = JobApplication.objects.filter(job__employer=employer)
+        
+        if status_filter:
+            queryset = queryset.filter(status=status_filter)
+        
+        return queryset.order_by('-applied_at')
+
+
 class ApplicantDetailView(APIView):
     """Get single applicant details including resume"""
     permission_classes = [IsAuthenticated, IsEmployer]

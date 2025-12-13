@@ -36,9 +36,14 @@ class TrainingProviderSerializer(serializers.ModelSerializer):
 class AgencySerializer(serializers.ModelSerializer):
     class Meta:
         model = Agency
-        fields = ["agency_name", "agency_id", "address", "representative_name"]  # All required except representative_name
+        fields = [
+            "agency_name", "agency_id", "address", "representative_name",
+            "document_public_id", "document_url"
+        ]
         extra_kwargs = {
-            'representative_name': {'required': False}  # Only this one is optional
+            'representative_name': {'required': False},  # Optional
+            'document_public_id': {'required': True},  # Required from frontend
+            'document_url': {'required': True}  # Required from frontend
         }
 
 
@@ -65,6 +70,28 @@ class RegisterSerializer(serializers.ModelSerializer):
                     user_type = validated_data['user_type']
                 )
                 
+                if user_type == "agency":
+                    from core.utils import move_cloudinary_document
+                    
+                    document_public_id = validated_data['data'].get('document_public_id')
+                    document_url = validated_data['data'].get('document_url')
+                    
+                    if document_public_id and document_url:
+                        try:
+
+                            moved_doc = move_cloudinary_document(
+                                public_id=document_public_id,
+                                user_id=str(user.id),
+                                document_type='verification'
+                            )
+                            
+                            validated_data['data']['document_public_id'] = moved_doc['public_id']
+                            validated_data['data']['document_url'] = moved_doc.get('secure_url') or moved_doc.get('url')
+                            
+                        except Exception as e:
+                            logger.error(f"Failed to move document for agency {user.email}: {e}")
+                            raise serializers.ValidationError(f"Document upload failed: {str(e)}")
+                
                 if user_type == "general":
                     val = GeneralUserSerializer(data=validated_data['data'])
                 elif user_type == "agency_referred":
@@ -85,7 +112,7 @@ class RegisterSerializer(serializers.ModelSerializer):
                 return user
         except Exception as e:
             logger.error(e)
-            raise serializers.ValidationError("Internal error. Please try again later")
+            raise serializers.ValidationError(e)
 
 
 class OTPVerifySerializer(serializers.Serializer):

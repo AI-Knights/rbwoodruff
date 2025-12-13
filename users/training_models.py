@@ -23,6 +23,12 @@ class TrainingProgram(models.Model):
         ('other', 'Other'),
     ]
     
+    DURATION_UNIT_CHOICES = [
+        ('hours', 'Hours'),
+        ('days', 'Days'),
+        ('months', 'Months'),
+    ]
+    
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     provider = models.ForeignKey('users.TrainingProvider', on_delete=models.CASCADE, related_name='programs')
     
@@ -31,7 +37,8 @@ class TrainingProgram(models.Model):
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
     
     external_link = models.URLField(help_text="Link to course platform or website")
-    duration_hours = models.IntegerField(help_text="Estimated hours to complete")
+    duration = models.IntegerField(help_text="Duration value (e.g., 3, 120, 6)")
+    duration_unit = models.CharField(max_length=10, choices=DURATION_UNIT_CHOICES, help_text="Unit of duration")
     
     deadline = models.DateField(null=True, blank=True, help_text="Enrollment or completion deadline")
     

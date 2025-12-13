@@ -15,7 +15,7 @@ class EmployerJobSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'title', 'category', 'description', 'requirements',
             'employment_type', 'location', 'is_remote', 'salary_min',
-            'salary_max', 'skills_required', 'deadline', 'status',
+            'salary_max', 'skills_required', 'number_of_openings', 'deadline', 'status',
             'created_at', 'applicant_count'
         ]
         read_only_fields = ['id', 'created_at']
@@ -28,11 +28,15 @@ class ApplicantSerializer(serializers.ModelSerializer):
     applicant_name = serializers.CharField(source='applicant.full_name', read_only=True)
     applicant_email = serializers.CharField(source='applicant.email', read_only=True)
     resume_completeness = serializers.SerializerMethodField()
+    job_title = serializers.CharField(source='job.title', read_only=True)
+    job_category = serializers.CharField(source='job.category', read_only=True)
+    job_location = serializers.CharField(source='job.location', read_only=True)
     
     class Meta:
         model = JobApplication
         fields = [
-            'id', 'applicant', 'applicant_name', 'applicant_email',
+            'id', 'job', 'job_title', 'job_category', 'job_location',
+            'applicant', 'applicant_name', 'applicant_email',
             'status', 'cover_letter', 'applied_at', 'employer_notes',
             'resume_completeness'
         ]

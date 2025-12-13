@@ -52,6 +52,7 @@ class Job(models.Model):
     salary_max = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     
     skills_required = models.JSONField(default=list, blank=True)  # List of skill strings
+    number_of_openings = models.IntegerField(null=True, blank=True, help_text="Number of positions available")
     
     deadline = models.DateField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=JOB_STATUS_CHOICES, default='active')

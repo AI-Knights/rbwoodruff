@@ -1,5 +1,6 @@
-"""Utility functions for the Neworkx platform"""
-
+import cloudinary
+import cloudinary.uploader
+from django.conf import settings
 import random
 import string
 from django.utils import timezone
@@ -121,3 +122,30 @@ def generate_receipt_number():
     timestamp = timezone.now().strftime('%Y%m%d%H%M%S')
     random_suffix = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
     return f"REC-{timestamp}-{random_suffix}"
+
+
+
+
+def move_cloudinary_document(public_id, user_id, document_type='verification'):
+    try:
+        filename = public_id.split('/')[-1]
+        new_public_id = f"verified/{user_id}/{document_type}_{filename}"
+        result = cloudinary.uploader.rename(
+            public_id,
+            new_public_id,
+            resource_type='raw', 
+            invalidate=True,  
+            overwrite=False  
+        )
+        
+        cloudinary.uploader.add_tag('verified', [new_public_id], resource_type='raw')
+        cloudinary.uploader.remove_tag('temp', [new_public_id], resource_type='raw')
+        
+        return {
+            'public_id': result.get('public_id'),
+            'url': result.get('url'),
+            'secure_url': result.get('secure_url')
+        }
+        
+    except Exception as e:
+        raise Exception(f"Failed to move document in Cloudinary: {str(e)}")

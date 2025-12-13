@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import (
-    AdminDashboardView, PendingAgenciesView, ApproveAgencyView,
+    AdminDashboardView, AgencyListView, PendingAgenciesView, ApproveAgencyView,
     EmployerListView, VerifyEmployerView, TrainerListView, VerifyTrainerView,
     AllUsersListView, LockUserAccountView, PaymentHistoryView, UserResumeView
 )
@@ -11,6 +11,7 @@ urlpatterns = [
     path('dashboard/', AdminDashboardView.as_view(), name='admin_dashboard'),
     
     # Agency Verification
+    path('agencies/', AgencyListView.as_view(), name='agencies'),
     path('agencies/pending/', PendingAgenciesView.as_view(), name='pending_agencies'),
     path('agencies/<uuid:agency_id>/approve/', ApproveAgencyView.as_view(), name='approve_agency'),
     

@@ -14,7 +14,7 @@ class TrainerProgramSerializer(serializers.ModelSerializer):
         model = TrainingProgram
         fields = [
             'id', 'name', 'description', 'category', 'external_link',
-            'duration_hours', 'deadline', 'is_active', 'created_at',
+            'duration', 'duration_unit', 'deadline', 'is_active', 'created_at',
             'learner_count'
         ]
         read_only_fields = ['id', 'created_at']

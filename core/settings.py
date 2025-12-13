@@ -56,6 +56,12 @@ INSTALLED_APPS += [
 
 AUTH_USER_MODEL = "authentication.UserAccount"
 
+# Authentication backends - required for email-based login
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',

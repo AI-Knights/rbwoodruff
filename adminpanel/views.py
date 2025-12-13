@@ -68,6 +68,21 @@ class AdminDashboardView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+class AgencyListView(generics.ListAPIView):
+    """List all agencies with optional status filtering"""
+    serializer_class = AgencyVerificationSerializer
+    permission_classes = [IsAuthenticated, IsAdmin]
+    
+    def get_queryset(self):
+        status_filter = self.request.query_params.get('status', None)
+        queryset = Agency.objects.all()
+        
+        if status_filter:
+            queryset = queryset.filter(approval_status=status_filter)
+        
+        return queryset.order_by('-created_at')
+
+
 class PendingAgenciesView(generics.ListAPIView):
     """List pending agency verifications"""
     serializer_class = AgencyVerificationSerializer

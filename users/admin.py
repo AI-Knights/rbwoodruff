@@ -88,9 +88,9 @@ class InterviewAdmin(admin.ModelAdmin):
 
 @admin.register(TrainingProgram)
 class TrainingProgramAdmin(admin.ModelAdmin):
-    list_display = ('name', 'provider', 'category', 'duration_hours', 'is_active', 'created_at')
-    list_filter = ('is_active', 'category', 'created_at')
-    search_fields = ('name', 'provider__user__email')
+    list_display = ('name', 'provider', 'category', 'duration', 'duration_unit', 'is_active', 'created_at')
+    list_filter = ('category', 'is_active', 'created_at')
+    search_fields = ('name', 'provider__user__full_name')
     readonly_fields = ('created_at', 'updated_at')
 
 

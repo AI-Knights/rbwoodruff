@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import ArrayField
+import uuid
 
 
 User = get_user_model()
@@ -8,6 +9,7 @@ User = get_user_model()
 
 class GeneralUser(models.Model):
     """Profile for self-enrolled general job seekers"""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='general_profile')
     phone_number = models.CharField(max_length=20)  # Required
     
@@ -26,6 +28,7 @@ class GeneralUser(models.Model):
 
 class ReferredUser(models.Model):
     """Profile for agency-referred court users"""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='referred_profile')
     phone_number = models.CharField(max_length=20)  # Required
     
@@ -61,6 +64,7 @@ class Employer(models.Model):
         ('other', 'Other'),
     ]
     
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='employer_profile')
     
     company_name = models.CharField(max_length=200)  # Required
@@ -80,6 +84,7 @@ class Employer(models.Model):
 
 class TrainingProvider(models.Model):
     """Profile for training provider accounts"""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='trainer_profile')
     
     specialization = models.CharField(max_length=200)  # Required
@@ -111,6 +116,7 @@ class Agency(models.Model):
         ('rejected', 'Rejected'),
     ]
     
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='agency_profile')
     
     agency_id = models.CharField(max_length=100, unique=True)  # Required
@@ -120,6 +126,11 @@ class Agency(models.Model):
     
     # Verification documents (stored as Cloudinary URLs or file paths)
     verification_documents = models.JSONField(default=list, blank=True, help_text="URLs to court authorization and registration docs")
+    
+    # Primary verification document from Cloudinary
+    document_public_id = models.CharField(max_length=255, blank=True, default='', help_text="Cloudinary public_id for the verification document")
+    document_url = models.URLField(blank=True, default='', help_text="Direct URL to the verification document")
+    
     
     # Approval workflow
     approval_status = models.CharField(max_length=20, choices=APPROVAL_STATUS_CHOICES, default='pending')

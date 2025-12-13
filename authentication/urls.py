@@ -7,6 +7,8 @@ from .payment_views import (
     CreatePaymentIntentView, ConfirmPaymentView, StripeWebhookView,
     PaymentHistoryView, DownloadReceiptView
 )
+from rest_framework_simplejwt.views import ( TokenObtainPairView, TokenRefreshView )
+
 
 
 
@@ -16,6 +18,7 @@ urlpatterns = [
     path('send-otp/', SendOTPView.as_view(), name='send_otp'),
     path('verify-otp/', VerifyOTPView.as_view(), name='verify_otp'),
     path('login/', LoginView.as_view(), name='login'),
+    path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('logout/', LogoutView.as_view(), name='logout'),
     path('profile/', ProfileView.as_view(), name='profile'),
     path('password-reset-request/', PasswordResetRequestView.as_view(), name='password_reset_request'),
