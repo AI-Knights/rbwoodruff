@@ -308,3 +308,68 @@ class UserResumeView(APIView):
             return Response({
                 'message': 'No resume found'
             }, status=status.HTTP_404_NOT_FOUND)
+
+
+class TrainingEnrollmentListView(generics.ListAPIView):
+    """List all training enrollments across all programs"""
+    permission_classes = [IsAuthenticated, IsAdmin]
+    
+    def get(self, request):
+        from users.models import Enrollment, Certificate, Resume
+        
+        # Get query parameters for filtering
+        program_id = request.query_params.get('program', None)
+        status_filter = request.query_params.get('status', None)
+        verification_status = request.query_params.get('certificate_status', None)
+        
+        queryset = Enrollment.objects.all()
+        
+        if program_id:
+            queryset = queryset.filter(program_id=program_id)
+        
+        if status_filter:
+            queryset = queryset.filter(status=status_filter)
+        
+        # Build response data
+        enrollments_data = []
+        for enrollment in queryset.order_by('-start_date'):
+            # Get certificate info
+            try:
+                certificate = Certificate.objects.get(enrollment=enrollment)
+                cert_status = certificate.verification_status
+                cert_uploaded_at = certificate.uploaded_at
+            except Certificate.DoesNotExist:
+                cert_status = "not_uploaded"
+                cert_uploaded_at = None
+            
+            # Filter by certificate status if provided
+            if verification_status and cert_status != verification_status:
+                continue
+            
+            # Check if resume exists
+            resume_exists = Resume.objects.filter(user=enrollment.user).exists()
+            resume_url = f"/admin-panel/users/{enrollment.user.id}/resume/" if resume_exists else None
+            
+            enrollments_data.append({
+                'id': str(enrollment.id),
+                'user_id': str(enrollment.user.id),
+                'user_name': enrollment.user.full_name,
+                'user_email': enrollment.user.email,
+                'program_id': str(enrollment.program.id),
+                'program_name': enrollment.program.name,
+                'program_category': enrollment.program.category,
+                'provider_name': enrollment.program.provider.user.full_name,
+                'enrollment_status': enrollment.status,
+                'progress_percentage': enrollment.progress_percentage,
+                'start_date': enrollment.start_date,
+                'completion_date': enrollment.completion_date,
+                'certificate_status': cert_status,
+                'certificate_uploaded_at': cert_uploaded_at,
+                'has_resume': resume_exists,
+                'resume_url': resume_url
+            })
+        
+        return Response({
+            'count': len(enrollments_data),
+            'results': enrollments_data
+        }, status=status.HTTP_200_OK)

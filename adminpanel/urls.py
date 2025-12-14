@@ -2,7 +2,8 @@ from django.urls import path
 from .views import (
     AdminDashboardView, AgencyListView, PendingAgenciesView, ApproveAgencyView,
     EmployerListView, VerifyEmployerView, TrainerListView, VerifyTrainerView,
-    AllUsersListView, LockUserAccountView, PaymentHistoryView, UserResumeView
+    AllUsersListView, LockUserAccountView, PaymentHistoryView, UserResumeView,
+    TrainingEnrollmentListView
 )
 
 
@@ -30,4 +31,7 @@ urlpatterns = [
     
     # Payments
     path('payments/', PaymentHistoryView.as_view(), name='payment_history'),
+    
+    # Training Enrollments
+    path('training-enrollments/', TrainingEnrollmentListView.as_view(), name='training_enrollments'),
 ]

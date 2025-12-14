@@ -31,24 +31,34 @@ class AgencyVerificationSerializer(serializers.ModelSerializer):
 
 class EmployerVerificationSerializer(serializers.ModelSerializer):
     user_email = serializers.CharField(source='user.email', read_only=True)
+    total_jobs = serializers.SerializerMethodField()
     
     class Meta:
         model = Employer
         fields = [
             'id', 'user', 'user_email', 'company_name', 'industry',
-            'office_location', 'is_verified', 'created_at'
+            'office_location', 'is_verified', 'total_jobs', 'created_at'
         ]
+    
+    def get_total_jobs(self, obj):
+        return obj.jobs.count()
 
 
 class TrainerVerificationSerializer(serializers.ModelSerializer):
     user_email = serializers.CharField(source='user.email', read_only=True)
+    trainer_name = serializers.CharField(source='user.full_name', read_only=True)
+    total_programs = serializers.SerializerMethodField()
     
     class Meta:
         model = TrainingProvider
         fields = [
-            'id', 'user', 'user_email', 'specialization', 'experience',
-            'is_verified', 'total_learners', 'average_completion_rate', 'created_at'
+            'id', 'user', 'user_email', 'trainer_name', 'specialization', 'experience',
+            'is_verified', 'total_learners', 'average_completion_rate', 'total_programs',
+            'created_at'
         ]
+    
+    def get_total_programs(self, obj):
+        return obj.programs.count()
 
 
 class UserListSerializer(serializers.ModelSerializer):
