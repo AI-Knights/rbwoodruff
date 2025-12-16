@@ -27,8 +27,9 @@ class Payment(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='payments')
     
-    # Stripe integration
+    # Stripe integration (both fields for backward compatibility)
     stripe_payment_intent_id = models.CharField(max_length=255, unique=True, null=True, blank=True)
+    stripe_checkout_session_id = models.CharField(max_length=255, unique=True, null=True, blank=True)
     stripe_customer_id = models.CharField(max_length=255, blank=True)
     
     amount = models.DecimalField(max_digits=10, decimal_places=2)
@@ -55,6 +56,7 @@ class Payment(models.Model):
         indexes = [
             models.Index(fields=['user', 'status']),
             models.Index(fields=['stripe_payment_intent_id']),
+            models.Index(fields=['stripe_checkout_session_id']),
             models.Index(fields=['status', 'created_at']),
         ]
     

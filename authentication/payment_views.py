@@ -1,4 +1,4 @@
-"""Payment processing views with Stripe integration"""
+"""Payment processing views with Stripe Checkout Session integration"""
 
 import stripe
 from django.conf import settings
@@ -11,19 +11,19 @@ from django.utils.decorators import method_decorator
 from django.http import HttpResponse
 
 from users.models import Payment, TransactionLog
-from .payment_serializers import PaymentSerializer, PaymentIntentSerializer, PaymentConfirmSerializer
+from .payment_serializers import PaymentSerializer, CheckoutSessionSerializer
 from .email_service import send_payment_receipt_email
 from core.permissions import IsJobSeeker
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
-class CreatePaymentIntentView(APIView):
-    """Create Stripe payment intent for registration fee"""
+class CreateCheckoutSessionView(APIView):
+    """Create Stripe Checkout Session for registration fee"""
     permission_classes = [IsAuthenticated, IsJobSeeker]
     
     def post(self, request):
-        serializer = PaymentIntentSerializer(data=request.data)
+        serializer = CheckoutSessionSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         
         # Get amount (default to registration fee)
@@ -31,22 +31,9 @@ class CreatePaymentIntentView(APIView):
         description = serializer.validated_data.get('description', 'Registration Fee')
         
         try:
-            # Create Stripe payment intent
-            intent = stripe.PaymentIntent.create(
-                amount=int(float(amount) * 100),  # Convert to cents
-                currency='usd',
-                metadata={
-                    'user_id': str(request.user.id),
-                    'user_email': request.user.email,
-                    'user_type': request.user.user_type
-                },
-                description=description
-            )
-            
-            # Create payment record
+            # Create payment record first
             payment = Payment.objects.create(
                 user=request.user,
-                stripe_payment_intent_id=intent.id,
                 amount=amount,
                 currency='usd',
                 payment_method='stripe',
@@ -54,101 +41,54 @@ class CreatePaymentIntentView(APIView):
                 description=description
             )
             
+            # Create Stripe Checkout Session
+            checkout_session = stripe.checkout.Session.create(
+                payment_method_types=['card'],
+                line_items=[{
+                    'price_data': {
+                        'currency': 'usd',
+                        'unit_amount': int(float(amount) * 100),  # Convert to cents
+                        'product_data': {
+                            'name': description,
+                            'description': f'One-time registration fee for {request.user.full_name}',
+                        },
+                    },
+                    'quantity': 1,
+                }],
+                mode='payment',
+                success_url=settings.STRIPE_SUCCESS_URL,
+                cancel_url=settings.STRIPE_CANCEL_URL,
+                customer_email=request.user.email,
+                metadata={
+                    'payment_id': str(payment.id),
+                    'user_id': str(request.user.id),
+                    'user_email': request.user.email,
+                    'user_type': request.user.user_type
+                }
+            )
+            
+            # Update payment with checkout session ID
+            payment.stripe_checkout_session_id = checkout_session.id
+            payment.save()
+            
             # Log transaction
             TransactionLog.objects.create(
                 payment=payment,
-                event_type='created',
-                details={'intent_id': intent.id}
+                event_type='checkout_session_created',
+                details={'session_id': checkout_session.id}
             )
             
             return Response({
-                'client_secret': intent.client_secret,
+                'checkout_url': checkout_session.url,
+                'session_id': checkout_session.id,
                 'payment_id': str(payment.id),
                 'amount': float(amount)
             }, status=status.HTTP_200_OK)
             
         except stripe.error.StripeError as e:
-            return Response({
-                'error': str(e)
-            }, status=status.HTTP_400_BAD_REQUEST)
-
-
-class ConfirmPaymentView(APIView):
-    """Confirm payment and update user status"""
-    permission_classes = [IsAuthenticated, IsJobSeeker]
-    
-    def post(self, request):
-        serializer = PaymentConfirmSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        
-        payment_intent_id = serializer.validated_data['payment_intent_id']
-        
-        try:
-            # Retrieve payment intent from Stripe
-            intent = stripe.PaymentIntent.retrieve(payment_intent_id)
-            
-            # Find payment record
-            try:
-                payment = Payment.objects.get(
-                    stripe_payment_intent_id=payment_intent_id,
-                    user=request.user
-                )
-            except Payment.DoesNotExist:
-                return Response({
-                    'error': 'Payment not found'
-                }, status=status.HTTP_404_NOT_FOUND)
-            
-            # Update payment status
-            if intent.status == 'succeeded':
-                payment.status = 'succeeded'
-                payment.receipt_url = intent.charges.data[0].receipt_url if intent.charges.data else ''
-                payment.generate_receipt_number()
-                payment.save()
-                
-                # Update user's payment status
-                if request.user.user_type == 'general':
-                    profile = request.user.general_profile
-                    profile.has_paid = True
-                    profile.save()
-                elif request.user.user_type == 'agency_referred':
-                    profile = request.user.referred_profile
-                    profile.has_paid = True
-                    profile.save()
-                
-                # Log transaction
-                TransactionLog.objects.create(
-                    payment=payment,
-                    event_type='succeeded',
-                    details={'receipt_url': payment.receipt_url}
-                )
-                
-                # Send receipt email
-                try:
-                    send_payment_receipt_email(request.user, payment)
-                except:
-                    pass
-                
-                return Response({
-                    'message': 'Payment successful',
-                    'receipt_number': payment.receipt_number,
-                    'receipt_url': payment.receipt_url
-                }, status=status.HTTP_200_OK)
-            else:
-                payment.status = 'failed'
-                payment.save()
-                
-                TransactionLog.objects.create(
-                    payment=payment,
-                    event_type='failed',
-                    details={'reason': intent.status}
-                )
-                
-                return Response({
-                    'error': 'Payment not completed',
-                    'status': intent.status
-                }, status=status.HTTP_400_BAD_REQUEST)
-                
-        except stripe.error.StripeError as e:
+            # Clean up payment record if Stripe fails
+            if payment:
+                payment.delete()
             return Response({
                 'error': str(e)
             }, status=status.HTTP_400_BAD_REQUEST)
@@ -156,24 +96,133 @@ class ConfirmPaymentView(APIView):
 
 @method_decorator(csrf_exempt, name='dispatch')
 class StripeWebhookView(APIView):
-    """Handle Stripe webhook events"""
+    """Handle Stripe webhook events for Checkout Session"""
     permission_classes = []
     
     def post(self, request):
+        print("hello.........................................")
         payload = request.body
         sig_header = request.META.get('HTTP_STRIPE_SIGNATURE')
         
+        # Verify webhook signature
         try:
             event = stripe.Webhook.construct_event(
                 payload, sig_header, settings.STRIPE_WEBHOOK_SECRET
             )
-        except ValueError:
+        except ValueError as e:
+            print(f"❌ Invalid payload: {e}")
             return HttpResponse(status=400)
-        except stripe.error.SignatureVerificationError:
+        except stripe.error.SignatureVerificationError as e:
+            print(f"❌ Invalid signature: {e}")
             return HttpResponse(status=400)
         
-        # Handle the event
-        if event['type'] == 'payment_intent.succeeded':
+        print(f"✅ Received event: {event['type']}")
+        
+        # Handle checkout session completed event
+        if event['type'] == 'checkout.session.completed':
+            session = event['data']['object']
+            
+            try:
+                # Get required fields from session
+                payment_id = session.get('metadata', {}).get('payment_id')
+                
+                if not payment_id:
+                    print(f"❌ No payment_id in session metadata")
+                    return HttpResponse(status=200)
+                
+                # Find payment record
+                try:
+                    payment = Payment.objects.get(id=payment_id)
+                except Payment.DoesNotExist:
+                    print(f"❌ Payment not found: {payment_id}")
+                    return HttpResponse(status=200)
+                
+                # Update payment status
+                payment.status = 'succeeded'
+                payment.stripe_checkout_session_id = session['id']
+                
+                # Get receipt URL from payment intent if available
+                payment_intent_id = session.get('payment_intent')
+                if payment_intent_id:
+                    try:
+                        payment_intent = stripe.PaymentIntent.retrieve(payment_intent_id)
+                        latest_charge_id = payment_intent.get('latest_charge')
+                        if latest_charge_id:
+                            charge = stripe.Charge.retrieve(latest_charge_id)
+                            payment.receipt_url = charge.get('receipt_url', '')
+                    except Exception as e:
+                        print(f"⚠️ Could not retrieve receipt URL: {e}")
+                
+                payment.generate_receipt_number()
+                payment.save()
+                
+                # ✅ UPDATE has_paid STATUS FOR USER
+                user = payment.user
+                try:
+                    if user.user_type == 'general':
+                        profile = user.general_profile
+                        profile.has_paid = True
+                        profile.save()
+                        print(f"✅ Updated has_paid for general user: {user.email}")
+                    elif user.user_type == 'agency_referred':
+                        profile = user.referred_profile
+                        profile.has_paid = True
+                        profile.save()
+                        print(f"✅ Updated has_paid for court-referred user: {user.email}")
+                except Exception as e:
+                    print(f"⚠️ Could not update has_paid: {e}")
+                
+                # Log transaction
+                TransactionLog.objects.create(
+                    payment=payment,
+                    event_type='checkout_completed',
+                    details={
+                        'session_id': session['id'],
+                        'customer_email': session.get('customer_email'),
+                        'amount_total': session['amount_total'],
+                        'payment_status': session['payment_status']
+                    }
+                )
+                
+                # Send receipt email
+                try:
+                    send_payment_receipt_email(user, payment)
+                    print(f"✅ Receipt email sent to: {user.email}")
+                except Exception as e:
+                    print(f"⚠️ Failed to send receipt email: {e}")
+                
+                print(f"✅ Payment completed: ${payment.amount} for {user.email}")
+                
+            except Exception as e:
+                print(f"❌ Error processing checkout.session.completed: {e}")
+                import traceback
+                traceback.print_exc()
+                return HttpResponse(status=200)
+        
+        # Handle checkout session expired (cancelled/timed out)
+        elif event['type'] == 'checkout.session.expired':
+            session = event['data']['object']
+            
+            try:
+                payment_id = session.get('metadata', {}).get('payment_id')
+                if payment_id:
+                    payment = Payment.objects.get(id=payment_id)
+                    payment.status = 'failed'
+                    payment.save()
+                    
+                    TransactionLog.objects.create(
+                        payment=payment,
+                        event_type='checkout_expired',
+                        details={'session_id': session.get('id')}
+                    )
+                    print(f"⚠️ Checkout session expired for payment: {payment_id}")
+            except Payment.DoesNotExist:
+                pass
+            except Exception as e:
+                print(f"❌ Error processing checkout.session.expired: {e}")
+        
+        # Still support old payment_intent events for backward compatibility
+        elif event['type'] == 'payment_intent.succeeded':
             payment_intent = event['data']['object']
             
             try:
@@ -188,8 +237,11 @@ class StripeWebhookView(APIView):
                     event_type='webhook_succeeded',
                     details=event['data']
                 )
+                print(f"✅ Legacy payment_intent succeeded: {payment_intent['id']}")
             except Payment.DoesNotExist:
-                pass
+                print(f"⚠️ Payment not found for intent: {payment_intent['id']}")
+            except Exception as e:
+                print(f"❌ Error processing payment_intent.succeeded: {e}")
                 
         elif event['type'] == 'payment_intent.payment_failed':
             payment_intent = event['data']['object']
@@ -206,9 +258,13 @@ class StripeWebhookView(APIView):
                     event_type='webhook_failed',
                     details=event['data']
                 )
+                print(f"⚠️ Legacy payment_intent failed: {payment_intent['id']}")
             except Payment.DoesNotExist:
-                pass
+                print(f"⚠️ Payment not found for intent: {payment_intent['id']}")
+            except Exception as e:
+                print(f"❌ Error processing payment_intent.payment_failed: {e}")
         
+        # Return 200 for all events (even if not handled)
         return HttpResponse(status=200)
 
 

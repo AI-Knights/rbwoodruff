@@ -93,19 +93,15 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
-# Email configuration - Console backend for development
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-DEFAULT_FROM_EMAIL = 'neworkx@platform.com'
+# Email configuration - SMTP for production
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = env('EMAIL_HOST')
+EMAIL_PORT = env('EMAIL_PORT', default=587)
+EMAIL_USE_TLS = env('EMAIL_USE_TLS', default=True)
+EMAIL_HOST_USER = env('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='neworkx@platform.com')
 OTP_VALIDITY_DURATION = 5  # minutes
-
-# For production, use SMTP:
-# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-# EMAIL_HOST = 'smtp.resend.com'
-# EMAIL_PORT = 2587
-# EMAIL_USE_TLS = True
-# EMAIL_HOST_USER = 'resend'
-# EMAIL_HOST_PASSWORD = env('EMAIL_PASSWORD')
-# DEFAULT_FROM_EMAIL = 'neworkx@platform.com'
 
 
 
@@ -205,6 +201,10 @@ STRIPE_PUBLIC_KEY = env("STRIPE_PUBLIC_KEY", default="pk_test_")
 STRIPE_WEBHOOK_SECRET = env("STRIPE_WEBHOOK_SECRET", default="")
 DOMAIN_URL = env("DOMAIN_URL", default="http://localhost:8000")
 REGISTRATION_FEE = 150.00  # USD
+
+# Stripe Checkout redirect URLs (customize in .env for production)
+STRIPE_SUCCESS_URL = env("STRIPE_SUCCESS_URL", default=f"{DOMAIN_URL}/payment/success?session_id={{CHECKOUT_SESSION_ID}}")
+STRIPE_CANCEL_URL = env("STRIPE_CANCEL_URL", default=f"{DOMAIN_URL}/payment/cancelled")
 
 # # google login
 # GOOGLE_CLIENT_ID = env('GOOGLE_CLIENT_ID')

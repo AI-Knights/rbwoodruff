@@ -166,10 +166,72 @@ class LoginSerializer(serializers.Serializer):
 
 class UserProfileSerializer(serializers.ModelSerializer):
     """Serializer for retrieving user profile information"""
+    has_paid = serializers.SerializerMethodField()
+    profile_data = serializers.SerializerMethodField()
+    
     class Meta:
         model = User
-        fields = ['id', 'email', 'full_name', 'user_type', 'profile_pic', 'date_joined']
-        read_only_fields = ['id', 'email', 'user_type', 'date_joined']
+        fields = ['id', 'email', 'full_name', 'user_type', 'profile_pic', 'date_joined', 'has_paid', 'profile_data']
+        read_only_fields = ['id', 'email', 'user_type', 'date_joined', 'has_paid', 'profile_data']
+    
+    def get_has_paid(self, obj):
+        """Get payment status for job seekers"""
+        try:
+            if obj.user_type == 'general':
+                return obj.general_profile.has_paid
+            elif obj.user_type == 'agency_referred':
+                return obj.referred_profile.has_paid
+            else:
+                # Non job-seeker roles don't need payment
+                return None
+        except:
+            return False
+    
+    def get_profile_data(self, obj):
+        """Get user type specific profile information"""
+        try:
+            if obj.user_type == 'general':
+                profile = obj.general_profile
+                return {
+                    'phone_number': profile.phone_number,
+                    'resume_completeness': profile.resume_completeness
+                }
+            elif obj.user_type == 'agency_referred':
+                profile = obj.referred_profile
+                return {
+                    'phone_number': profile.phone_number,
+                    'court_name': profile.court_name,
+                    'case_name': profile.case_name,
+                    'resume_completeness': profile.resume_completeness
+                }
+            elif obj.user_type == 'employer':
+                profile = obj.employer_profile
+                return {
+                    'company_name': profile.company_name,
+                    'industry': profile.industry,
+                    'office_location': profile.office_location,
+                    'is_verified': profile.is_verified
+                }
+            elif obj.user_type == 'training_provider':
+                profile = obj.trainer_profile
+                return {
+                    'specialization': profile.specialization,
+                    'experience': profile.experience,
+                    'is_verified': profile.is_verified,
+                    'total_learners': profile.total_learners
+                }
+            elif obj.user_type == 'agency':
+                profile = obj.agency_profile
+                return {
+                    'agency_name': profile.agency_name,
+                    'agency_id': profile.agency_id,
+                    'address': profile.address,
+                    'approval_status': profile.approval_status,
+                    'is_verified': profile.is_verified
+                }
+            return None
+        except:
+            return None
 
 
 class PasswordResetRequestSerializer(serializers.Serializer):

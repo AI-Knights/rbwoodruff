@@ -4,7 +4,7 @@ from .views import (
     ProfileView, PasswordResetRequestView, PasswordResetConfirmView
 )
 from .payment_views import (
-    CreatePaymentIntentView, ConfirmPaymentView, StripeWebhookView,
+    CreateCheckoutSessionView, StripeWebhookView,
     PaymentHistoryView, DownloadReceiptView
 )
 from rest_framework_simplejwt.views import ( TokenObtainPairView, TokenRefreshView )
@@ -24,9 +24,8 @@ urlpatterns = [
     path('password-reset-request/', PasswordResetRequestView.as_view(), name='password_reset_request'),
     path('password-reset-confirm/', PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
     
-    # Payment
-    path('payment/create-intent/', CreatePaymentIntentView.as_view(), name='create_payment_intent'),
-    path('payment/confirm/', ConfirmPaymentView.as_view(), name='confirm_payment'),
+    # Payment - Stripe Checkout Session
+    path('payment/create-checkout-session/', CreateCheckoutSessionView.as_view(), name='create_checkout_session'),
     path('payment/webhook/', StripeWebhookView.as_view(), name='stripe_webhook'),
     path('payment/history/', PaymentHistoryView.as_view(), name='payment_history'),
     path('payment/receipt/<uuid:payment_id>/', DownloadReceiptView.as_view(), name='download_receipt'),
