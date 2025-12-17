@@ -186,3 +186,63 @@ class DashboardStatsSerializer(serializers.Serializer):
     pending_interviews = serializers.IntegerField()
     saved_jobs_count = serializers.IntegerField()
     resume_completeness = serializers.IntegerField()
+
+
+# AI Career Analysis serializers
+class WorkHistoryInputSerializer(serializers.Serializer):
+    """Serializer for work history input in career analysis request."""
+    job_title = serializers.CharField(max_length=200)
+    company_name = serializers.CharField(max_length=200)
+    location = serializers.CharField(max_length=200)
+    start_date = serializers.DateField()
+    end_date = serializers.DateField(required=False, allow_null=True)
+    currently_employed = serializers.BooleanField(default=False)
+    responsibilities = serializers.CharField(allow_blank=True)
+
+
+class QuizDataSerializer(serializers.Serializer):
+    """Serializer for quiz data input."""
+    interests = serializers.CharField(max_length=500)
+    work_environment = serializers.CharField(max_length=200)
+    training_flexibility = serializers.CharField(max_length=200)
+    strengths = serializers.CharField(max_length=500)
+    job_priorities = serializers.CharField(max_length=500)
+    location = serializers.CharField(max_length=200)
+
+
+class CareerAnalysisRequestSerializer(serializers.Serializer):
+    """Main request serializer for career analysis."""
+    quiz_data = QuizDataSerializer()
+    work_history = WorkHistoryInputSerializer(many=True)
+    public_id = serializers.CharField(max_length=500)
+    url = serializers.URLField()
+
+
+class SectionStatusSerializer(serializers.Serializer):
+    """Serializer for resume section status."""
+    personal_info = serializers.CharField()
+    education = serializers.CharField()
+    work_experience = serializers.CharField()
+    skills = serializers.CharField()
+
+
+class ResumeAnalysisSerializer(serializers.Serializer):
+    """Serializer for resume analysis results."""
+    completeness_score = serializers.IntegerField(min_value=0, max_value=100)
+    section_status = SectionStatusSerializer()
+    suggestions = serializers.ListField(child=serializers.CharField())
+
+
+class CareerRecommendationSerializer(serializers.Serializer):
+    """Serializer for individual career recommendation."""
+    title = serializers.CharField(max_length=200)
+    description = serializers.CharField()
+    training_duration = serializers.CharField(max_length=100)
+    match_type = serializers.ChoiceField(choices=['primary', 'alternative'])
+
+
+class CareerAnalysisResponseSerializer(serializers.Serializer):
+    """Main response serializer for career analysis."""
+    resume_analysis = ResumeAnalysisSerializer()
+    career_recommendations = CareerRecommendationSerializer(many=True)
+

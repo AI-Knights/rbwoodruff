@@ -24,6 +24,9 @@ from .views import (
     
     # Contact
     ContactMessageView,
+    
+    # AI Career Analysis
+    CareerAnalysisView,
 )
 
 
@@ -69,4 +72,7 @@ urlpatterns = [
     
     # Contact
     path('contact/', ContactMessageView.as_view(), name='contact'),
+    
+    # AI Career Analysis
+    path('career-analysis/', CareerAnalysisView.as_view(), name='career_analysis'),
 ]

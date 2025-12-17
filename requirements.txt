@@ -33,3 +33,7 @@ Pillow==11.0.0
 
 # Email sending (production)
 # celery[redis]==5.4.0  # Uncomment for async task processing
+
+# AI and Resume Analysis
+openai>=1.0.0
+PyMuPDF>=1.23.0

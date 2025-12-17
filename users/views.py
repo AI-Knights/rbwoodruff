@@ -17,7 +17,8 @@ from .serializers import (
     TrainingProgramSerializer, EnrollmentSerializer, CertificateSerializer,
     CareerQuizSerializer, ResumeSerializer, WorkExperienceSerializer,
     EducationSerializer, SkillSerializer, DocumentSerializer,
-    SavedJobSerializer, ContactMessageSerializer, DashboardStatsSerializer
+    SavedJobSerializer, ContactMessageSerializer, DashboardStatsSerializer,
+    CareerAnalysisRequestSerializer, CareerAnalysisResponseSerializer
 )
 from core.permissions import IsJobSeeker, IsPaidUser
 from core.utils import calculate_resume_completeness, parse_resume_pdf
@@ -540,3 +541,98 @@ class ContactMessageView(generics.CreateAPIView):
     
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+
+# ===== AI CAREER ANALYSIS =====
+class CareerAnalysisView(APIView):
+    """AI-powered career analysis based on quiz, work history, and resume PDF"""
+    permission_classes = [IsAuthenticated, IsJobSeeker]
+    
+    def post(self, request):
+        """
+        Analyze career data and provide AI-powered recommendations.
+        
+        Expected request body:
+        {
+            "quiz_data": {...},
+            "work_history": [...],
+            "public_id": "...",
+            "url": "https://cloudinary-url.pdf"
+        }
+        """
+        import logging
+        from users.ai_service import analyze_career_data
+        
+        logger = logging.getLogger(__name__)
+        
+        # Validate request data
+        request_serializer = CareerAnalysisRequestSerializer(data=request.data)
+        if not request_serializer.is_valid():
+            logger.error(f"Invalid request data: {request_serializer.errors}")
+            return Response({
+                'error': 'Invalid request data',
+                'details': request_serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        validated_data = request_serializer.validated_data
+        
+        try:
+            # Extract validated data
+            quiz_data = validated_data['quiz_data']
+            work_history = validated_data['work_history']
+            pdf_url = validated_data['url']
+            
+            logger.info(f"Starting career analysis for user {request.user.id}")
+            
+            # Call AI service
+            analysis_result = analyze_career_data(
+                quiz_data=quiz_data,
+                work_history=work_history,
+                pdf_url=pdf_url
+            )
+            
+            logger.info(f"Career analysis completed for user {request.user.id}")
+            
+            # Validate response data
+            response_serializer = CareerAnalysisResponseSerializer(data=analysis_result)
+            if not response_serializer.is_valid():
+                logger.error(f"Invalid AI response: {response_serializer.errors}")
+                return Response({
+                    'error': 'AI service returned invalid data',
+                    'details': response_serializer.errors
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            return Response(response_serializer.data, status=status.HTTP_200_OK)
+            
+        except ValueError as e:
+            # Configuration errors (missing API key, etc.)
+            logger.error(f"Configuration error: {str(e)}")
+            return Response({
+                'error': 'Service configuration error',
+                'message': 'AI service is not properly configured. Please contact support.'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+        except Exception as e:
+            # Handle any other errors
+            logger.error(f"Career analysis failed: {str(e)}", exc_info=True)
+            
+            # Check if it's a PDF download error
+            if 'download' in str(e).lower() or 'cloudinary' in str(e).lower():
+                return Response({
+                    'error': 'Failed to download resume',
+                    'message': 'Unable to access the resume file. Please ensure the URL is valid.'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Check if it's an OpenAI error
+            if 'openai' in str(e).lower() or 'api' in str(e).lower():
+                return Response({
+                    'error': 'AI analysis failed',
+                    'message': 'The AI service encountered an error. Please try again later.'
+                }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+            
+            # Generic error
+            return Response({
+                'error': 'Analysis failed',
+                'message': 'An unexpected error occurred. Please try again.'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+

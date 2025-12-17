@@ -222,3 +222,7 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
     'SIGNING_KEY': env('SIGNING_KEY'),
 }
+
+# OpenAI configuration for AI career analysis
+OPENAI_API_KEY = env('OPENAI_API_KEY', default='')
+OPENAI_MODEL = env('OPENAI_MODEL', default='gpt-4o')  # GPT-4o: cheaper + vision support
