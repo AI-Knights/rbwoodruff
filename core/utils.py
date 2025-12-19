@@ -127,19 +127,37 @@ def generate_receipt_number():
 
 
 def move_cloudinary_document(public_id, user_id, document_type='verification'):
+    """
+    Move document from pending/ to verified/ folder in Cloudinary
+    
+    Structure: 
+    - verified/documents/ - for signup/verification documents
+    - verified/resume/ - for resume PDFs
+    """
     try:
+        # Extract just the filename without folder path
         filename = public_id.split('/')[-1]
-        new_public_id = f"verified/{user_id}/{document_type}_{filename}"
+        
+        # Determine subfolder based on document type
+        if document_type == 'resume':
+            subfolder = 'resume'
+        else:
+            subfolder = 'documents'
+        
+        # New path: verified/subfolder/filename
+        new_public_id = f"verified/{subfolder}/{filename}"
+        
         result = cloudinary.uploader.rename(
             public_id,
             new_public_id,
-            resource_type='raw', 
+            resource_type='image',  # Changed from 'raw' to 'image' for preview
             invalidate=True,  
             overwrite=False  
         )
         
-        cloudinary.uploader.add_tag('verified', [new_public_id], resource_type='raw')
-        cloudinary.uploader.remove_tag('temp', [new_public_id], resource_type='raw')
+        # Update tags to match registration flow
+        cloudinary.uploader.add_tag('registration_uploads', [new_public_id], resource_type='image')
+        cloudinary.uploader.remove_tag('temp', [new_public_id], resource_type='image')
         
         return {
             'public_id': result.get('public_id'),

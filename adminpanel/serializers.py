@@ -95,3 +95,26 @@ class PaymentListSerializer(serializers.ModelSerializer):
         ]
 
 
+
+
+
+class CategorySerializer(serializers.ModelSerializer):
+    """Serializer for Category CRUD operations"""
+    job_count = serializers.SerializerMethodField()
+    training_count = serializers.SerializerMethodField()
+    
+    class Meta:
+        from users.models import Category
+        model = Category
+        fields = [
+            "id", "name", "slug", "description", "is_active",
+            "job_count", "training_count", "created_at", "updated_at"
+        ]
+        read_only_fields = ["id", "slug", "created_at", "updated_at", "job_count", "training_count"]
+    
+    def get_job_count(self, obj):
+        return obj.jobs.count() if hasattr(obj, "jobs") else 0
+    
+    def get_training_count(self, obj):
+        return obj.training_programs.count() if hasattr(obj, "training_programs") else 0
+

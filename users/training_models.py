@@ -10,18 +10,7 @@ User = get_user_model()
 class TrainingProgram(models.Model):
     """Training courses offered by training providers"""
     
-    CATEGORY_CHOICES = [
-        ('healthcare', 'Healthcare'),
-        ('technology', 'Technology'),
-        ('construction', 'Construction'),
-        ('retail', 'Retail'),
-        ('hospitality', 'Hospitality'),
-        ('manufacturing', 'Manufacturing'),
-        ('education', 'Education'),
-        ('finance', 'Finance'),
-        ('soft_skills', 'Soft Skills'),
-        ('other', 'Other'),
-    ]
+    # Removed CATEGORY_CHOICES - now using Category model
     
     DURATION_UNIT_CHOICES = [
         ('hours', 'Hours'),
@@ -34,7 +23,13 @@ class TrainingProgram(models.Model):
     
     name = models.CharField(max_length=200)
     description = models.TextField()
-    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
+    category = models.ForeignKey(
+        'users.Category',
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='training_programs',
+        help_text="Training category - will be set to null if category is deleted"
+    )
     
     external_link = models.URLField(help_text="Link to course platform or website")
     duration = models.IntegerField(help_text="Duration value (e.g., 3, 120, 6)")

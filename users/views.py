@@ -109,7 +109,7 @@ class JobDetailView(generics.RetrieveAPIView):
 
 class JobApplicationCreateView(APIView):
     """Apply to a job"""
-    permission_classes = [IsAuthenticated, IsJobSeeker, IsPaidUser]
+    permission_classes = [IsAuthenticated, IsJobSeeker]
     
     def post(self, request, job_id):
         try:
@@ -236,7 +236,7 @@ class TrainingProgramListView(generics.ListAPIView):
 
 class TrainingEnrollView(APIView):
     """Enroll in a training program"""
-    permission_classes = [IsAuthenticated, IsJobSeeker, IsPaidUser]
+    permission_classes = [IsAuthenticated, IsJobSeeker]
     
     def post(self, request, program_id):
         try:
@@ -546,7 +546,7 @@ class ContactMessageView(generics.CreateAPIView):
 # ===== AI CAREER ANALYSIS =====
 class CareerAnalysisView(APIView):
     """AI-powered career analysis based on quiz, work history, and resume PDF"""
-    permission_classes = [IsAuthenticated, IsJobSeeker]
+    permission_classes = [IsAuthenticated]
     
     def post(self, request):
         """
@@ -581,6 +581,7 @@ class CareerAnalysisView(APIView):
             quiz_data = validated_data['quiz_data']
             work_history = validated_data['work_history']
             pdf_url = validated_data['url']
+            public_id = validated_data.get('public_id')  # Get public_id
             
             logger.info(f"Starting career analysis for user {request.user.id}")
             
@@ -592,6 +593,11 @@ class CareerAnalysisView(APIView):
             )
             
             logger.info(f"Career analysis completed for user {request.user.id}")
+            
+            
+            # Add PDF URL and public_id to response
+            analysis_result['resume_pdf_url'] = pdf_url
+            analysis_result['resume_public_id'] = public_id
             
             # Validate response data
             response_serializer = CareerAnalysisResponseSerializer(data=analysis_result)

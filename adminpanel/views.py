@@ -373,3 +373,77 @@ class TrainingEnrollmentListView(generics.ListAPIView):
             'count': len(enrollments_data),
             'results': enrollments_data
         }, status=status.HTTP_200_OK)
+
+
+
+class CategoryViewSet(APIView):
+    """Admin category CRUD operations"""
+    permission_classes = [IsAuthenticated, IsAdmin]
+    
+    def get(self, request, category_id=None):
+        """List all categories or get specific category"""
+        from users.models import Category
+        from adminpanel.serializers import CategorySerializer
+        
+        if category_id:
+            category = get_object_or_404(Category, id=category_id)
+            serializer = CategorySerializer(category)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        # List all categories
+        categories = Category.objects.all().order_by("name")
+        serializer = CategorySerializer(categories, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    def post(self, request):
+        """Create new category"""
+        from users.models import Category
+        from adminpanel.serializers import CategorySerializer
+        
+        serializer = CategorySerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def patch(self, request, category_id):
+        """Update category"""
+        from users.models import Category
+        from adminpanel.serializers import CategorySerializer
+        
+        category = get_object_or_404(Category, id=category_id)
+        serializer = CategorySerializer(category, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def delete(self, request, category_id):
+        """Delete category - moves jobs/trainings to Other"""
+        from users.models import Category, Job, TrainingProgram
+        
+        category = get_object_or_404(Category, id=category_id)
+        
+        # Prevent deletion of Other category
+        if category.slug == "other":
+            return Response({
+                "error": "Cannot delete Other category"
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Get or create Other category
+        other_category, _ = Category.objects.get_or_create(
+            slug="other",
+            defaults={"name": "Other", "description": "Other categories"}
+        )
+        
+        # Move all jobs and trainings to Other
+        Job.objects.filter(category=category).update(category=other_category)
+        TrainingProgram.objects.filter(category=category).update(category=other_category)
+        
+        # Delete the category
+        category.delete()
+        
+        return Response({
+            "message": f"Category deleted. {Job.objects.filter(category=other_category).count()} jobs and {TrainingProgram.objects.filter(category=other_category).count()} trainings moved to Other."
+        }, status=status.HTTP_200_OK)
+

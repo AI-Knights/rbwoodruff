@@ -61,7 +61,7 @@ class TrainingProgramSerializer(serializers.ModelSerializer):
         model = TrainingProgram
         fields = [
             'id', 'provider', 'provider_name', 'name', 'description',
-            'category', 'external_link', 'duration_hours', 'deadline',
+            'category', 'external_link', 'duration', 'duration_unit', 'deadline',
             'is_active', 'created_at'
         ]
         read_only_fields = ['id', 'provider', 'created_at']
@@ -234,7 +234,8 @@ class ResumeAnalysisSerializer(serializers.Serializer):
 
 
 class CareerRecommendationSerializer(serializers.Serializer):
-    """Serializer for individual career recommendation."""
+    """Serializer for individual career recommendation"""
+    category_id = serializers.UUIDField(required=False, allow_null=True)
     title = serializers.CharField(max_length=200)
     description = serializers.CharField()
     training_duration = serializers.CharField(max_length=100)
@@ -245,4 +246,56 @@ class CareerAnalysisResponseSerializer(serializers.Serializer):
     """Main response serializer for career analysis."""
     resume_analysis = ResumeAnalysisSerializer()
     career_recommendations = CareerRecommendationSerializer(many=True)
+    resume_pdf_url = serializers.URLField(required=False, allow_null=True)
+    resume_public_id = serializers.CharField(required=False, allow_null=True)
 
+
+
+# Resume Generation Request Serializers
+class PersonalInfoInputSerializer(serializers.Serializer):
+    """Personal information for resume generation"""
+    fullName = serializers.CharField(required=False, allow_blank=True)
+    email = serializers.EmailField(required=False, allow_blank=True)
+    location = serializers.CharField(required=False, allow_blank=True)
+    dateOfBirth = serializers.DateField(required=False, allow_null=True)
+    profilePicture = serializers.CharField(required=False, allow_blank=True)  # base64
+
+
+class WorkExperienceGenerationSerializer(serializers.Serializer):
+    """Work experience for resume generation"""
+    jobTitle = serializers.CharField(required=False, allow_blank=True)
+    company = serializers.CharField(required=False, allow_blank=True)
+    location = serializers.CharField(required=False, allow_blank=True)
+    startDate = serializers.DateField(required=False, allow_null=True)
+    endDate = serializers.DateField(required=False, allow_null=True)
+    current = serializers.BooleanField(default=False)
+    responsibilities = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        allow_empty=True
+    )
+    description = serializers.CharField(required=False, allow_blank=True)
+
+
+class EducationInputSerializer(serializers.Serializer):
+    """Education for resume generation"""
+    institutionName = serializers.CharField(required=False, allow_blank=True)
+    degree = serializers.CharField(required=False, allow_blank=True)
+    fieldOfStudy = serializers.CharField(required=False, allow_blank=True)
+    grade = serializers.CharField(required=False, allow_blank=True)
+    startYear = serializers.CharField(required=False, allow_blank=True)
+    endYear = serializers.CharField(required=False, allow_blank=True)
+    current = serializers.BooleanField(default=False)
+
+
+class ResumeGenerationRequestSerializer(serializers.Serializer):
+    """Main request for resume generation and analysis"""
+    personalInfo = PersonalInfoInputSerializer(required=False)
+    workExperience = WorkExperienceGenerationSerializer(many=True, required=False)
+    skills = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        allow_empty=True
+    )
+    education = EducationInputSerializer(many=True, required=False)
+    quiz_data = QuizDataSerializer(required=False)  # Optional quiz data for AI

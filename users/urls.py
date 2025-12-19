@@ -28,6 +28,9 @@ from .views import (
     # AI Career Analysis
     CareerAnalysisView,
 )
+from .category_views import PublicCategoryListView
+from .resume_status_view import ResumeCompletenessView
+from .resume_pipeline_view import ResumeGenerationPipelineView
 
 
 urlpatterns = [
@@ -58,6 +61,8 @@ urlpatterns = [
     path('career-quiz/', CareerQuizView.as_view(), name='career_quiz'),
     path('resume/', ResumeView.as_view(), name='resume'),
     path('resume/parse/', ResumeParseView.as_view(), name='resume_parse'),
+    path('resume/completeness/', ResumeCompletenessView.as_view(), name='resume_completeness'),
+    path('resume/generate-and-analyze/', ResumeGenerationPipelineView.as_view(), name='resume_generate_analyze'),
     path('resume/work-experience/', WorkExperienceView.as_view(), name='work_experience'),
     path('resume/work-experience/<uuid:pk>/', WorkExperienceDetailView.as_view(), name='work_experience_detail'),
     path('resume/education/', EducationView.as_view(), name='education'),
@@ -75,4 +80,7 @@ urlpatterns = [
     
     # AI Career Analysis
     path('career-analysis/', CareerAnalysisView.as_view(), name='career_analysis'),
+    
+    # Categories (public listing for providers)
+    path('categories/', PublicCategoryListView.as_view(), name='public_categories'),
 ]

@@ -3,7 +3,7 @@ from .views import (
     AdminDashboardView, AgencyListView, PendingAgenciesView, ApproveAgencyView,
     EmployerListView, VerifyEmployerView, TrainerListView, VerifyTrainerView,
     AllUsersListView, LockUserAccountView, PaymentHistoryView, UserResumeView,
-    TrainingEnrollmentListView
+    TrainingEnrollmentListView, CategoryViewSet
 )
 
 
@@ -34,4 +34,8 @@ urlpatterns = [
     
     # Training Enrollments
     path('training-enrollments/', TrainingEnrollmentListView.as_view(), name='training_enrollments'),
+    
+    # Category Management
+    path('categories/', CategoryViewSet.as_view(), name='categories'),
+    path('categories/<uuid:category_id>/', CategoryViewSet.as_view(), name='category_detail'),
 ]

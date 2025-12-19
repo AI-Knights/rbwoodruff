@@ -48,6 +48,13 @@ class Resume(models.Model):
     linkedin_url = models.URLField(blank=True)
     portfolio_url = models.URLField(blank=True)
     
+    # Resume PDF URL (Cloudinary)
+    resume_pdf_url = models.URLField(blank=True, help_text="Cloudinary URL of resume PDF")
+    
+    # AI Analysis Results (stored as JSON)
+    section_status_data = models.JSONField(default=dict, blank=True, help_text="AI's section completeness assessment")
+    ai_suggestions = models.JSONField(default=list, blank=True, help_text="AI's suggestions")
+    
     # Completeness tracking
     completeness_percentage = models.IntegerField(default=0, help_text="0-100")
     

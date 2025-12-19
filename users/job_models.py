@@ -24,23 +24,20 @@ class Job(models.Model):
         ('draft', 'Draft'),
     ]
     
-    CATEGORY_CHOICES = [
-        ('healthcare', 'Healthcare'),
-        ('technology', 'Technology'),
-        ('construction', 'Construction'),
-        ('retail', 'Retail'),
-        ('hospitality', 'Hospitality'),
-        ('manufacturing', 'Manufacturing'),
-        ('education', 'Education'),
-        ('finance', 'Finance'),
-        ('other', 'Other'),
-    ]
+    
+    # Removed CATEGORY_CHOICES - now using Category model
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     employer = models.ForeignKey('users.Employer', on_delete=models.CASCADE, related_name='jobs')
     
     title = models.CharField(max_length=200)
-    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
+    category = models.ForeignKey(
+        'users.Category',
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='jobs',
+        help_text="Job category - will be set to null if category is deleted"
+    )
     description = models.TextField()
     requirements = models.TextField()
     

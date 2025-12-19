@@ -2,7 +2,7 @@
 AI-powered career analysis service for resume evaluation and career recommendations.
 """
 import json
-import base64
+import re
 import requests
 import fitz  # PyMuPDF
 from typing import Dict, List, Any
@@ -11,56 +11,98 @@ from openai import OpenAI
 
 
 class PDFParser:
-    """Service to download and parse PDF resumes from Cloudinary."""
+    """Production-grade PDF text extraction service using PyMuPDF."""
     
     @staticmethod
-    def download_and_convert_to_images(url: str, max_pages: int = 3) -> List[str]:
+    def download_and_extract_text(url: str, max_pages: int = 5) -> str:
         """
-        Download PDF from Cloudinary URL and convert pages to base64 images for GPT-4o vision.
+        Download PDF from Cloudinary and extract text with advanced cleaning.
+        
+        Industry best practices:
+        - Uses PyMuPDF (fitz) - fastest and most accurate Python PDF library
+        - Preserves layout with proper spacing
+        - Handles multi-column text
+        - Cleans control characters and extra whitespace
+        - Limits pages for performance
         
         Args:
             url: Cloudinary URL of the PDF resume
-            max_pages: Maximum number of pages to process (default 3 for cost control)
+            max_pages: Maximum pages to process (default 5 for resumes)
             
         Returns:
-            List of base64-encoded images (one per page)
+            Clean, formatted text content from PDF
             
         Raises:
-            Exception: If download or conversion fails
+            Exception: If download or parsing fails
         """
         try:
-            # Download PDF from Cloudinary
+            # Download PDF from Cloudinary with timeout
             response = requests.get(url, timeout=30)
             response.raise_for_status()
             
-            # Open PDF with PyMuPDF
+            # Open PDF from bytes stream
             pdf_document = fitz.open(stream=response.content, filetype="pdf")
-            base64_images = []
             
-            # Convert each page to image (PNG format)
+            # Extract text from pages
+            text_content = []
             pages_to_process = min(pdf_document.page_count, max_pages)
             
             for page_num in range(pages_to_process):
                 page = pdf_document[page_num]
                 
-                # Render page to image (higher DPI for better quality)
-                pix = page.get_pixmap(dpi=150)
+                # Extract text with layout preservation
+                # "text" mode preserves layout better than "blocks"
+                page_text = page.get_text("text")
                 
-                # Convert to PNG bytes
-                img_bytes = pix.tobytes("png")
-                
-                # Encode to base64
-                base64_image = base64.b64encode(img_bytes).decode('utf-8')
-                base64_images.append(base64_image)
+                if page_text.strip():
+                    text_content.append(page_text)
             
             pdf_document.close()
             
-            return base64_images
+            # Combine all pages
+            full_text = "\n\n".join(text_content)
+            
+            # Advanced text cleaning
+            cleaned_text = PDFParser._clean_text(full_text)
+            
+            return cleaned_text
             
         except requests.RequestException as e:
             raise Exception(f"Failed to download PDF from Cloudinary: {str(e)}")
         except Exception as e:
-            raise Exception(f"Failed to convert PDF to images: {str(e)}")
+            raise Exception(f"Failed to extract text from PDF: {str(e)}")
+    
+    @staticmethod
+    def _clean_text(text: str) -> str:
+        """
+        Clean extracted PDF text with production-grade processing.
+        
+        Handles:
+        - Control characters
+        - Excessive whitespace
+        - Broken lines
+        - Special characters
+        """
+        # Remove control characters except newlines and tabs
+        text = re.sub(r'[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]', '', text)
+        
+        # Normalize whitespace
+        text = re.sub(r'[ \t]+', ' ', text)  # Multiple spaces to single
+        text = re.sub(r'\n\s*\n\s*\n+', '\n\n', text)  # Max 2 newlines
+        
+        # Fix common PDF extraction issues
+        text = text.replace('\u2022', '•')  # Bullet points
+        text = text.replace('\u2013', '-')  # En dash
+        text = text.replace('\u2014', '--')  # Em dash
+        text = text.replace('\u2019', "'")  # Smart quote
+        text = text.replace('\u201c', '"')  # Smart quote
+        text = text.replace('\u201d', '"')  # Smart quote
+        
+        # Strip leading/trailing whitespace from each line
+        lines = [line.strip() for line in text.split('\n')]
+        text = '\n'.join(lines)
+        
+        return text.strip()
 
 
 class CareerAnalyzer:
@@ -74,66 +116,71 @@ class CareerAnalyzer:
         self.client = OpenAI(api_key=api_key)
         # Use gpt-4o by default (cheaper and supports vision)
         self.model = getattr(settings, 'OPENAI_MODEL', 'gpt-4o')
+        
+        # Fetch available categories from database (with full details)
+        self.categories = self._get_categories()
+    
+    def _get_categories(self):
+        """Fetch all active categories with ID, name, and description."""
+        try:
+            from users.models import Category
+            categories = Category.objects.filter(is_active=True).values('id', 'name', 'slug', 'description')
+            return list(categories) if categories else []
+        except Exception:
+            # Fallback to default categories if database query fails
+            return [
+                {'id': None, 'name': 'Healthcare', 'slug': 'healthcare', 'description': 'Healthcare and medical services'},
+                {'id': None, 'name': 'Technology', 'slug': 'technology', 'description': 'IT, software, and technology services'},
+                {'id': None, 'name': 'Construction', 'slug': 'construction', 'description': 'Construction and building trades'},
+                {'id': None, 'name': 'Retail', 'slug': 'retail', 'description': 'Retail sales and customer service'},
+                {'id': None, 'name': 'Hospitality', 'slug': 'hospitality', 'description': 'Hotels, restaurants, and tourism'},
+                {'id': None, 'name': 'Manufacturing', 'slug': 'manufacturing', 'description': 'Manufacturing and production'},
+                {'id': None, 'name': 'Education', 'slug': 'education', 'description': 'Education and training'},
+                {'id': None, 'name': 'Finance', 'slug': 'finance', 'description': 'Finance, banking, and accounting'},
+                {'id': None, 'name': 'Other', 'slug': 'other', 'description': 'Other categories'}
+            ]
     
     def analyze_career_path(
         self,
         quiz_data: Dict[str, str],
         work_history: List[Dict[str, Any]],
-        resume_images: List[str]
+        resume_text: str
     ) -> Dict[str, Any]:
         """
-        Analyze user data and resume images to provide career recommendations.
+        Analyze user data and resume text to provide career recommendations.
         
         Args:
             quiz_data: User's quiz responses (interests, work environment, etc.)
             work_history: List of work history entries
-            resume_images: List of base64-encoded resume page images
+            resume_text: Extracted and cleaned text from PDF resume
             
         Returns:
             Structured career analysis with resume score and recommendations
         """
         # Build the analysis prompt
-        prompt = self._build_analysis_prompt(quiz_data, work_history)
+        prompt = self._build_analysis_prompt(quiz_data, work_history, resume_text)
         
         try:
-            # Build messages with resume images
-            messages = [
-                {
-                    "role": "system",
-                    "content": (
-                        "You are an expert career counselor and resume analyst. "
-                        "Analyze the provided resume images along with quiz data and work history. "
-                        "Return ONLY a valid JSON response with resume analysis and career recommendations. "
-                        "Do not include any explanatory text outside the JSON."
-                    )
-                },
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": prompt
-                        }
-                    ]
-                }
-            ]
-            
-            # Add each resume page image to the message
-            for base64_image in resume_images:
-                messages[1]["content"].append({
-                    "type": "image_url",
-                    "image_url": {
-                        "url": f"data:image/png;base64,{base64_image}",
-                        "detail": "high"  # High detail for better text recognition
-                    }
-                })
-            
-            # Call OpenAI API with vision
+            # Call OpenAI API with text-only (faster and cheaper than vision)
             response = self.client.chat.completions.create(
                 model=self.model,
-                messages=messages,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": (
+                            "You are an expert career counselor and resume analyst. "
+                            "Analyze the provided resume text along with quiz data and work history. "
+                            "Return ONLY a valid JSON response with resume analysis and career recommendations. "
+                            "Do not include any explanatory text outside the JSON."
+                        )
+                    },
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ],
                 temperature=0.7,
-                max_tokens=2500,
+                max_tokens=2000,
                 response_format={"type": "json_object"}
             )
             
@@ -149,9 +196,10 @@ class CareerAnalyzer:
     def _build_analysis_prompt(
         self,
         quiz_data: Dict[str, str],
-        work_history: List[Dict[str, Any]]
+        work_history: List[Dict[str, Any]],
+        resume_text: str
     ) -> str:
-        """Build the analysis prompt for OpenAI (resume content comes from vision)."""
+        """Build the analysis prompt for OpenAI with resume text."""
         work_history_summary = "\n".join([
             f"- {item.get('job_title', 'N/A')} at {item.get('company_name', 'N/A')} "
             f"({item.get('start_date', 'N/A')} to {item.get('end_date', 'Present')}): "
@@ -161,8 +209,17 @@ class CareerAnalyzer:
         
         has_work_history = len(work_history) > 0
         
+        # Limit resume text to avoid token limits (keep first 3000 chars)
+        resume_preview = resume_text[:3000] if len(resume_text) > 3000 else resume_text
+        
+        # Format categories for AI with full details
+        categories_list = "\n".join([
+            f"- ID: {cat.get('id')}, Name: {cat['name']}, Description: {cat.get('description', 'N/A')}"
+            for cat in self.categories
+        ])
+        
         prompt = f"""
-Analyze the resume images provided along with the following user data and provide career recommendations:
+Analyze the resume text provided along with the following user data and provide career recommendations:
 
 **Quiz Responses:**
 - Interests: {quiz_data.get('interests', 'N/A')}
@@ -177,14 +234,24 @@ Analyze the resume images provided along with the following user data and provid
 
 IMPORTANT: The work history above is user-provided and verified. When assessing resume completeness:
 - If work history is provided above, mark "work_experience" as "complete"
-- The resume images may supplement this information but should not override it
+- The resume text may supplement this information but should not override it
 
-**Resume Images Analysis:**
-Please analyze the resume images to extract ADDITIONAL information including:
-- Personal information (name, contact details) - mark "personal_info" as complete/incomplete based on what you see
-- Education (degrees, institutions, dates) - mark "education" as complete/incomplete based on what you see
-- Skills (technical, soft skills, certifications) - mark "skills" as complete/incomplete based on what you see
-- Any additional work experience details not already covered above
+**Resume Text:**
+{resume_preview}
+
+**AVAILABLE CAREER CATEGORIES (From Database):**
+You MUST recommend from ONLY these categories. Use the EXACT category data provided:
+
+{categories_list}
+
+CRITICAL INSTRUCTIONS FOR CAREER RECOMMENDATIONS:
+1. DO NOT create custom job titles like "Software Developer" or "IT Manager"
+2. You MUST use the exact category names from the list above
+3. For each recommendation, use:
+   - category_id: The exact ID from the list
+   - title: The exact category NAME from the list (e.g., "Technology", "Healthcare")
+   - description: The exact category DESCRIPTION from the list, OR if empty, create a brief description of careers in that category
+4. Choose 1 primary and 2 alternative categories based on user's profile
 
 **Instructions:**
 Provide a JSON response with the following structure:
@@ -206,14 +273,16 @@ Provide a JSON response with the following structure:
   }},
   "career_recommendations": [
     {{
-      "title": "<career path title>",
-      "description": "<brief description>",
+      "category_id": "<exact ID from category list>",
+      "title": "<exact category NAME from list, e.g., 'Technology', 'Healthcare'>",
+      "description": "<exact category DESCRIPTION from list, or brief description of careers in this category>",
       "training_duration": "<e.g., '3-6 months', 'Less than 3 months'>",
       "match_type": "primary"
     }},
     {{
-      "title": "<alternative career path>",
-      "description": "<brief description>",
+      "category_id": "<exact ID from category list>",
+      "title": "<exact category NAME>",
+      "description": "<exact category DESCRIPTION or brief description>",
       "training_duration": "<duration>",
       "match_type": "alternative"
     }}
@@ -275,12 +344,14 @@ Provide a JSON response with the following structure:
 
 # Main service interface
 def analyze_career_data(
-    quiz_data: Dict[str, str],
-    work_history: List[Dict[str, Any]],
-    pdf_url: str
-) -> Dict[str, Any]:
+    quiz_data,
+    work_history,
+    pdf_url
+):
     """
     Main function to analyze career data and provide recommendations.
+    
+    Uses production-grade text extraction for optimal speed and cost.
     
     Args:
         quiz_data: User's quiz responses
@@ -293,13 +364,12 @@ def analyze_career_data(
     Raises:
         Exception: If any step of the analysis fails
     """
-    # Step 1: Download and convert PDF to images
+    # Step 1: Download and extract text from PDF (fast and accurate)
     pdf_parser = PDFParser()
-    resume_images = pdf_parser.download_and_convert_to_images(pdf_url)
+    resume_text = pdf_parser.download_and_extract_text(pdf_url)
     
-    # Step 2: Analyze with GPT-4o vision
+    # Step 2: Analyze with GPT-4o using text
     analyzer = CareerAnalyzer()
-    analysis_result = analyzer.analyze_career_path(quiz_data, work_history, resume_images)
+    analysis_result = analyzer.analyze_career_path(quiz_data, work_history, resume_text)
     
     return analysis_result
-
