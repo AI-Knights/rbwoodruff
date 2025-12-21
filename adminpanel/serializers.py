@@ -37,11 +37,12 @@ class EmployerVerificationSerializer(serializers.ModelSerializer):
         model = Employer
         fields = [
             'id', 'user', 'user_email', 'company_name', 'industry',
-            'office_location', 'is_verified', 'total_jobs', 'created_at'
+            'office_location', 'status', 'total_jobs', 'created_at'
         ]
     
     def get_total_jobs(self, obj):
         return obj.jobs.count()
+
 
 
 class TrainerVerificationSerializer(serializers.ModelSerializer):

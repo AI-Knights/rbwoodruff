@@ -210,7 +210,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
                     'company_name': profile.company_name,
                     'industry': profile.industry,
                     'office_location': profile.office_location,
-                    'is_verified': profile.is_verified
+                    'status': profile.status
                 }
             elif obj.user_type == 'training_provider':
                 profile = obj.trainer_profile

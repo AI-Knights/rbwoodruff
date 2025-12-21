@@ -88,6 +88,12 @@ class Employer(models.Model):
         ('other', 'Other'),
     ]
     
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('verified', 'Verified'),
+        ('banned', 'Banned'),
+    ]
+    
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='employer_profile')
     
@@ -95,15 +101,15 @@ class Employer(models.Model):
     industry = models.CharField(max_length=50, choices=INDUSTRY_CHOICES, default='other')
     office_location = models.CharField(max_length=200)  # Required
     
-    # Verification
-    is_verified = models.BooleanField(default=False)
-    verification_date = models.DateTimeField(null=True, blank=True)
+    # Status
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
         return f"Employer: {self.company_name}"
+
 
 
 class TrainingProvider(models.Model):

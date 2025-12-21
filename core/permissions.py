@@ -58,9 +58,10 @@ class IsVerifiedEmployer(permissions.BasePermission):
             return False
         
         try:
-            return request.user.employer_profile.is_verified
+            return request.user.employer_profile.status == 'verified'
         except:
             return False
+
 
 
 class IsTrainingProvider(permissions.BasePermission):

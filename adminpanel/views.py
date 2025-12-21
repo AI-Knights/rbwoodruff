@@ -46,7 +46,7 @@ class AdminDashboardView(APIView):
         
         # Pending verifications
         pending_agencies = Agency.objects.filter(approval_status='pending').count()
-        pending_employers = Employer.objects.filter(is_verified=False).count()
+        pending_employers = Employer.objects.filter(status='pending').count()
         pending_trainers = TrainingProvider.objects.filter(is_verified=False).count()
         pending_verifications = pending_agencies + pending_employers + pending_trainers
         
@@ -130,46 +130,53 @@ class EmployerListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated, IsAdmin]
     
     def get_queryset(self):
-        verified = self.request.query_params.get('verified', None)
+        status_filter = self.request.query_params.get('status', None)
         queryset = Employer.objects.all()
         
-        if verified is not None:
-            queryset = queryset.filter(is_verified=verified.lower() == 'true')
+        if status_filter:
+            queryset = queryset.filter(status=status_filter)
         
         return queryset.order_by('-created_at')
 
 
 class VerifyEmployerView(APIView):
-    """Verify or suspend employer"""
+    """Update employer status (verify, ban, or set to pending)"""
     permission_classes = [IsAuthenticated, IsAdmin]
     
     def post(self, request, employer_id):
         employer = get_object_or_404(Employer, id=employer_id)
         
-        action = request.data.get('action')  # 'verify' or 'suspend'
+        action = request.data.get('action')  # 'verify', 'ban', or 'pending'
         
         if action == 'verify':
-            employer.is_verified = True
-            employer.verification_date = timezone.now()
+            employer.status = 'verified'
             employer.save()
             
             return Response({
                 'message': 'Employer verified successfully'
             }, status=status.HTTP_200_OK)
             
-        elif action == 'suspend':
-            employer.is_verified = False
+        elif action == 'ban':
+            employer.status = 'banned'
             employer.save()
             
             # Optionally deactivate all jobs
             Job.objects.filter(employer=employer, status='active').update(status='closed')
             
             return Response({
-                'message': 'Employer suspended'
+                'message': 'Employer banned'
+            }, status=status.HTTP_200_OK)
+        
+        elif action == 'pending':
+            employer.status = 'pending'
+            employer.save()
+            
+            return Response({
+                'message': 'Employer status set to pending'
             }, status=status.HTTP_200_OK)
         
         return Response({
-            'error': 'Invalid action'
+            'error': 'Invalid action. Use "verify", "ban", or "pending"'
         }, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -346,9 +353,14 @@ class TrainingEnrollmentListView(generics.ListAPIView):
             if verification_status and cert_status != verification_status:
                 continue
             
-            # Check if resume exists
-            resume_exists = Resume.objects.filter(user=enrollment.user).exists()
-            resume_url = f"/admin-panel/users/{enrollment.user.id}/resume/" if resume_exists else None
+            # Check if resume exists and get URL
+            try:
+                resume = Resume.objects.get(user=enrollment.user)
+                resume_exists = True
+                resume_url = resume.resume_pdf_url if resume.resume_pdf_url else None
+            except Resume.DoesNotExist:
+                resume_exists = False
+                resume_url = None
             
             enrollments_data.append({
                 'id': str(enrollment.id),
@@ -357,7 +369,7 @@ class TrainingEnrollmentListView(generics.ListAPIView):
                 'user_email': enrollment.user.email,
                 'program_id': str(enrollment.program.id),
                 'program_name': enrollment.program.name,
-                'program_category': enrollment.program.category,
+                'program_category': enrollment.program.category.name,
                 'provider_name': enrollment.program.provider.user.full_name,
                 'enrollment_status': enrollment.status,
                 'progress_percentage': enrollment.progress_percentage,

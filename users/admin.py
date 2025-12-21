@@ -37,10 +37,11 @@ class ReferredUserAdmin(admin.ModelAdmin):
 
 @admin.register(Employer)
 class EmployerAdmin(admin.ModelAdmin):
-    list_display = ('user', 'company_name', 'industry', 'is_verified', 'verification_date', 'created_at')
-    list_filter = ('is_verified', 'industry', 'created_at')
+    list_display = ('user', 'company_name', 'industry', 'status', 'created_at')
+    list_filter = ('status', 'industry', 'created_at')
     search_fields = ('user__email', 'company_name', 'office_location')
-    readonly_fields = ('created_at', 'updated_at', 'verification_date')
+    readonly_fields = ('created_at', 'updated_at')
+
 
 
 @admin.register(TrainingProvider)
