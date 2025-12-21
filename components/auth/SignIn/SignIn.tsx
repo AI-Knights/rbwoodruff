@@ -2,20 +2,15 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import Company from "@/assets/company.svg";
-import Loaction from "@/assets/loaction.svg";
 import Lock from "@/assets/lock.svg";
 import Email from "@/assets/email.svg";
-import { email, z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
-  FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";

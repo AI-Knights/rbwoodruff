@@ -1,5 +1,6 @@
-"use client"
-import React, { useState } from 'react';
+'use client';
+
+import { useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,61 +27,42 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Eye, Ban, CheckCircle, Search, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Eye, Ban, CheckCircle, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { toast } from 'sonner';
+import { useGetEmployersQuery, useUpdateEmployerStatusMutation } from '@/store/api/adminSlice/EmployerSlice';
+import { Employer } from '@/types/admin/employer.type';
 
-interface Employer {
-  id: string;
-  companyName: string;
-  industry: string;
-  activeJobs: number;
-  status: 'Verified' | 'Pending' | 'Suspended';
-  email: string;
-}
+const itemsPerPage = 8;
 
 const EmployerTable = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('All Users');
+  const [filterStatus, setFilterStatus] = useState<'All Users' | 'verified' | 'pending' | 'banned'>('All Users');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedEmployer, setSelectedEmployer] = useState<Employer | null>(null);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [showSuspendDialog, setShowSuspendDialog] = useState(false);
   const [showApproveDialog, setShowApproveDialog] = useState(false);
-  const itemsPerPage = 8;
 
-  // Dummy data
-  const employers: Employer[] = [
-    { id: 'E001', companyName: 'TechCorp Industries', industry: 'Software', activeJobs: 12, status: 'Verified', email: 'contact@techcorp.com' },
-    { id: 'E002', companyName: 'Google Incorporate', industry: 'Software', activeJobs: 6, status: 'Verified', email: 'hr@google.com' },
-    { id: 'E003', companyName: 'Jamuna Incorporate', industry: 'Software', activeJobs: 9, status: 'Verified', email: 'jobs@jamuna.com' },
-    { id: 'E004', companyName: 'Techgiant Incorporate', industry: 'Software', activeJobs: 8, status: 'Verified', email: 'recruit@techgiant.com' },
-    { id: 'E005', companyName: 'Techonologia', industry: 'Software', activeJobs: 10, status: 'Verified', email: 'careers@techonologia.com' },
-    { id: 'E006', companyName: 'Technical Incorporate', industry: 'Software', activeJobs: 17, status: 'Verified', email: 'hr@technical.com' },
-    { id: 'E007', companyName: 'Microsoft Incorporate', industry: 'Software', activeJobs: 15, status: 'Verified', email: 'jobs@microsoft.com' },
-    { id: 'E008', companyName: 'Microsoft Incorporate', industry: 'Software', activeJobs: 15, status: 'Verified', email: 'jobs@microsoft.com' },
-    { id: 'E009', companyName: 'Microsoft Incorporate', industry: 'Software', activeJobs: 15, status: 'Verified', email: 'jobs@microsoft.com' },
-    { id: 'E000', companyName: 'Microsoft Incorporate', industry: 'Software', activeJobs: 15, status: 'Verified', email: 'jobs@microsoft.com' },
-    { id: 'E011', companyName: 'Microsoft Incorporate', industry: 'Software', activeJobs: 15, status: 'Verified', email: 'jobs@microsoft.com' },
-    { id: 'E012', companyName: 'Microsoft Incorporate', industry: 'Software', activeJobs: 15, status: 'Verified', email: 'jobs@microsoft.com' },
-    { id: 'E013', companyName: 'Microsoft Incorporate', industry: 'Software', activeJobs: 15, status: 'Verified', email: 'jobs@microsoft.com' },
-    { id: 'E014', companyName: 'Microsoft Incorporate', industry: 'Software', activeJobs: 15, status: 'Verified', email: 'jobs@microsoft.com' },
-    { id: 'E015', companyName: 'Microsoft Incorporate', industry: 'Software', activeJobs: 15, status: 'Verified', email: 'jobs@microsoft.com' },
-    { id: 'E016', companyName: 'Microsoft Incorporate', industry: 'Software', activeJobs: 15, status: 'Verified', email: 'jobs@microsoft.com' },
-    { id: 'E017', companyName: 'Microsoft Incorporate', industry: 'Software', activeJobs: 15, status: 'Verified', email: 'jobs@microsoft.com' },
-    { id: 'E018', companyName: 'Microsoft Incorporate', industry: 'Software', activeJobs: 15, status: 'Verified', email: 'jobs@microsoft.com' },
-    { id: 'E019', companyName: 'Microsoft Incorporate', industry: 'Software', activeJobs: 15, status: 'Verified', email: 'jobs@microsoft.com' },
-    { id: 'E020', companyName: 'Microsoft Incorporate', industry: 'Software', activeJobs: 15, status: 'Verified', email: 'jobs@microsoft.com' },
-  ];
+  const apiFilter = filterStatus === 'All Users' ? undefined : filterStatus.toLowerCase() as 'verified' | 'pending' | 'banned';
 
-  const filteredEmployers = employers.filter(employer => {
-    const matchesSearch = employer.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         employer.id.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterStatus === 'All Users' || employer.status === filterStatus;
-    return matchesSearch && matchesFilter;
-  });
+  const { data, isLoading, isFetching } = useGetEmployersQuery({ page: currentPage, filter: apiFilter });
+  const [updateStatus, { isLoading: isUpdating }] = useUpdateEmployerStatusMutation();
 
-  const totalPages = Math.ceil(filteredEmployers.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedEmployers = filteredEmployers.slice(startIndex, startIndex + itemsPerPage);
+  const employers = data?.results ?? [];
+  const totalCount = data?.count ?? 0;
+  const totalPages = Math.ceil(totalCount / itemsPerPage);
+
+  const filteredEmployers = employers.filter((employer) =>
+    employer.company_name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const uiEmployers = filteredEmployers.map((emp) => ({
+    ...emp,
+    companyName: emp.company_name,
+    activeJobs: emp.total_jobs,
+    status: emp.is_verified === 'verified' ? 'Verified' : emp.is_verified === 'pending' ? 'Pending' : 'Suspended',
+    email: emp.user_email,
+  }));
 
   const handleViewProfile = (employer: Employer) => {
     setSelectedEmployer(employer);
@@ -97,20 +79,36 @@ const EmployerTable = () => {
     setShowApproveDialog(true);
   };
 
-  const handleSuspendConfirm = () => {
-    console.log('Suspending employer:', selectedEmployer);
-    setShowSuspendDialog(false);
+  const handleSuspendConfirm = async () => {
+    if (!selectedEmployer) return;
+    try {
+      await updateStatus({ id: selectedEmployer.id, action: 'banned' }).unwrap();
+      toast.success('Employer suspended successfully');
+      setShowSuspendDialog(false);
+    } catch (error) {
+      const err = error as {data?: {message?: string}};
+      toast.error(err?.data?.message || 'Failed to suspend employer');
+    }
   };
 
-  const handleApproveConfirm = () => {
-    console.log('Approving employer:', selectedEmployer);
-    setShowApproveDialog(false);
+  const handleApproveConfirm = async () => {
+    if (!selectedEmployer) return;
+    try {
+      await updateStatus({ id: selectedEmployer.id, action: 'verified' }).unwrap();
+      toast.success('Employer approved successfully');
+      setShowApproveDialog(false);
+    } catch (error) {
+      const err = error as {data?: {message?: string}};
+      toast.error(err?.data?.message || 'Failed to approve employer');
+    }
   };
+
+  if (isLoading) return <div className="text-center py-10">Loading employers...</div>;
 
   return (
     <div className="lg:max-w-2xl xl:max-w-[1920px] mx-auto min-h-[calc(100vh-170px)] bg-white p-4 md:p-6 lg:p-8">
       <div className="space-y-4">
-        {/* Header Section */}
+        {/* Header */}
         <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
           <div className="relative w-full sm:w-80">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -134,7 +132,7 @@ const EmployerTable = () => {
           </Select>
         </div>
 
-        {/* Desktop Table View */}
+        {/* Desktop Table */}
         <div className="hidden md:block bg-white rounded-lg shadow overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -149,44 +147,56 @@ const EmployerTable = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {paginatedEmployers.map((employer, index) => (
-                  <tr key={index} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{employer.id}</td>
-                    <td className="px-6 py-4 text-sm text-gray-900">{employer.companyName}</td>
+                {uiEmployers.map((employer: Employer) => (
+                  <tr key={employer.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{employer.id.slice(0, 8)}...</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{employer.company_name}</td>
                     <td className="px-6 py-4 text-sm text-gray-900">{employer.industry}</td>
-                    <td className="px-6 py-4 text-sm text-gray-900">{employer.activeJobs}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{employer.total_jobs}</td>
                     <td className="px-6 py-4">
-                      <span className="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-green-100 text-green-800">
-                        {employer.status}
+                      <span
+                        className={`inline-flex items-center px-3 py-1 rounded-md text-sm font-medium ${
+                          employer.is_verified === 'verified' ? 'bg-green-100 text-green-800' :
+                          employer.is_verified === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-red-100 text-red-800'
+                        }`}
+                      >
+                        {employer.is_verified}
                       </span>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleViewProfile(employer)}
-                          className="gap-2"
-                        >
+                        <Button variant="ghost" size="sm" onClick={() => handleViewProfile(employer)}>
                           <Eye className="h-4 w-4" />
-                          View
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleSuspendClick(employer)}
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Ban className="h-5 w-5" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleApproveClick(employer)}
-                          className="text-green-500 hover:text-green-700 hover:bg-green-50"
-                        >
-                          <CheckCircle className="h-5 w-5" />
-                        </Button>
+                        {employer.is_verified === 'pending' ? (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleApproveClick(employer)}
+                            className="text-green-500 hover:text-green-700 hover:bg-green-50"
+                          >
+                            <CheckCircle className="h-5 w-5" />
+                          </Button>
+                        ) : employer.is_verified === 'verified' ? (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleSuspendClick(employer)}
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Ban className="h-5 w-5" />
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleApproveClick(employer)}
+                            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                          >
+                            <CheckCircle className="h-5 w-5" />
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -196,18 +206,24 @@ const EmployerTable = () => {
           </div>
         </div>
 
-        {/* Mobile Card View */}
+        {/* Mobile Cards */}
         <div className="md:hidden space-y-4">
-          {paginatedEmployers.map((employer, index) => (
-            <Card key={index}>
+          {uiEmployers.map((employer: Employer) => (
+            <Card key={employer.id}>
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
                   <div>
-                    <p className="text-sm text-gray-500">ID: {employer.id}</p>
-                    <h3 className="font-semibold text-lg">{employer.companyName}</h3>
+                    <p className="text-sm text-gray-500">ID: {employer.id.slice(0, 8)}...</p>
+                    <h3 className="font-semibold text-lg">{employer.company_name}</h3>
                   </div>
-                  <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-green-100 text-green-800">
-                    {employer.status}
+                  <span
+                    className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${
+                      employer.is_verified === 'verified' ? 'bg-green-100 text-green-800' :
+                      employer.is_verified === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-red-100 text-red-800'
+                    }`}
+                  >
+                    {employer.is_verified}
                   </span>
                 </div>
               </CardHeader>
@@ -219,35 +235,42 @@ const EmployerTable = () => {
                   </div>
                   <div>
                     <p className="text-gray-500">Active Jobs</p>
-                    <p className="font-medium">{employer.activeJobs}</p>
+                    <p className="font-medium">{employer.total_jobs}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 pt-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleViewProfile(employer)}
-                    className="gap-2 flex-1"
-                  >
-                    <Eye className="h-4 w-4" />
+                  <Button variant="outline" size="sm" onClick={() => handleViewProfile(employer)} className="flex-1">
+                    <Eye className="h-4 w-4 mr-2" />
                     View
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => handleSuspendClick(employer)}
-                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                  >
-                    <Ban className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => handleApproveClick(employer)}
-                    className="text-green-500 hover:text-green-700 hover:bg-green-50"
-                  >
-                    <CheckCircle className="h-4 w-4" />
-                  </Button>
+                  {employer.is_verified === 'pending' ? (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handleApproveClick(employer)}
+                      className="text-green-500 hover:text-green-700 hover:bg-green-50"
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                    </Button>
+                  ) : employer.is_verified === 'verified' ? (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handleSuspendClick(employer)}
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Ban className="h-4 w-4" />
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handleApproveClick(employer)}
+                      className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -259,19 +282,19 @@ const EmployerTable = () => {
           <Button
             variant="outline"
             size="icon"
-            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-            disabled={currentPage === 1}
+            onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+            disabled={currentPage === 1 || isFetching}
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <span className="text-sm font-medium">
-            Page {currentPage} of {totalPages}
+            Page {currentPage} of {totalPages || 1}
           </span>
           <Button
             variant="outline"
             size="icon"
-            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+            disabled={currentPage === totalPages || isFetching}
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
@@ -281,13 +304,13 @@ const EmployerTable = () => {
         <Dialog open={showProfileDialog} onOpenChange={setShowProfileDialog}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader className="flex flex-row items-center justify-between pb-4">
-              <DialogTitle className="text-xl font-semibold">Employer Profile</DialogTitle>              
+              <DialogTitle className="text-xl font-semibold">Employer Profile</DialogTitle>
             </DialogHeader>
             {selectedEmployer && (
               <div className="grid grid-cols-2 gap-6 pt-2">
                 <div>
                   <p className="text-sm text-gray-600 mb-1">Company Name</p>
-                  <p className="font-semibold">{selectedEmployer.companyName}</p>
+                  <p className="font-semibold">{selectedEmployer.company_name}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600 mb-1">Industry</p>
@@ -295,12 +318,18 @@ const EmployerTable = () => {
                 </div>
                 <div>
                   <p className="text-sm text-gray-600 mb-1">Email</p>
-                  <p className="font-semibold">{selectedEmployer.email}</p>
+                  <p className="font-semibold">{selectedEmployer.user_email}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600 mb-1">Status</p>
-                  <span className="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-green-100 text-green-800">
-                    {selectedEmployer.status}
+                  <span
+                    className={`inline-flex items-center px-3 py-1 rounded-md text-sm font-medium ${
+                      selectedEmployer.is_verified === 'verified' ? 'bg-green-100 text-green-800' :
+                      selectedEmployer.is_verified === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-red-100 text-red-800'
+                    }`}
+                  >
+                    {selectedEmployer.is_verified}
                   </span>
                 </div>
               </div>
@@ -308,13 +337,13 @@ const EmployerTable = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Suspend Alert Dialog */}
+        {/* Suspend Dialog */}
         <AlertDialog open={showSuspendDialog} onOpenChange={setShowSuspendDialog}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle className="text-xl font-semibold">Suspend Employer</AlertDialogTitle>
               <AlertDialogDescription className="text-base pt-2">
-                Are you sure you want to suspend {selectedEmployer?.companyName}?
+                Are you sure you want to suspend {selectedEmployer?.company_name}?
                 <br />
                 They will not be able to post jobs or access their account.
               </AlertDialogDescription>
@@ -323,30 +352,32 @@ const EmployerTable = () => {
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleSuspendConfirm}
+                disabled={isUpdating}
                 className="bg-black text-white hover:bg-gray-800"
               >
-                Confirm Suspend
+                {isUpdating ? 'Suspending...' : 'Confirm Suspend'}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
 
-        {/* Approve Alert Dialog */}
+        {/* Approve Dialog */}
         <AlertDialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle className="text-xl font-semibold">Approve Employer</AlertDialogTitle>
               <AlertDialogDescription className="text-base pt-2">
-                Are you sure you want to Approve {selectedEmployer?.companyName}?
+                Are you sure you want to approve {selectedEmployer?.company_name}?
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleApproveConfirm}
+                disabled={isUpdating}
                 className="bg-black text-white hover:bg-gray-800"
               >
-                Confirm Approve
+                {isUpdating ? 'Approving...' : 'Confirm Approve'}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
