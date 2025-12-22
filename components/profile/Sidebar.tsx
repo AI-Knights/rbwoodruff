@@ -14,6 +14,7 @@ import { usePathname, useRouter } from "next/navigation";
 import Logo from "../elements/Logo";
 import { clearAuthCookies } from "@/lib/manage_token";
 
+
 const Sidebar = ({
   isOpen,
   onClose,

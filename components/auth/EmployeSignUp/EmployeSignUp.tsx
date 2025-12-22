@@ -163,7 +163,6 @@ export default function EmployeSignUp() {
               </FormItem>
             )}
           />
-
           <FormField
             control={form.control}
             name="password"
