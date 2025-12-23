@@ -36,26 +36,32 @@ export const getUserType = (token: string): string => {
 /**
  * Get dashboard route based on user_type from your app
  */
-export const getDashboardRoute = (token: string): string => {
-    const userType = getUserType(token).toLowerCase();
+export const getDashboardRoute = (token: string | undefined): string => {
 
-    switch (userType) {
-        case "employer":
-            return "/employer-dashboard";
+    if(token) {
 
-        case "training_provider":
-            return "/training-provider-dashboard";
-
-        case "agency":
-            return "/agency-dashboard";
-
-
-
-
-
-        default:
-            return "/admin/dashboard";
+        const userType = getUserType(token).toLowerCase();
+        switch (userType) {
+            case "employer":
+                return "/employer-dashboard";
+    
+            case "training_provider":
+                return "/training-provider-dashboard";
+    
+            case "agency":
+                return "/agency-dashboard";
+    
+    
+    
+    
+    
+            default:
+                return "/admin/dashboard";
+        }
     }
+
+    return "#"
+
 };
 
 /**

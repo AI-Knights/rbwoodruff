@@ -20,10 +20,11 @@ import Link from "next/link";
 import z from "zod";
 import { useSignInUserMutation } from "@/store/api/authSlice/authSlice";
 import { useRouter } from "next/navigation";
+import { getDashboardRoute } from "@/lib/manage_token/decode_token";
 
 export default function SignIn() {
   const router = useRouter()
-  const [signInUser, { status, isError, isLoading, isSuccess }] = useSignInUserMutation()
+  const [signInUser, { data, status, isError, isLoading, isSuccess }] = useSignInUserMutation()
   const form = useForm<z.infer<typeof signIn>>({
     resolver: zodResolver(signIn),
     defaultValues: {
@@ -39,10 +40,11 @@ export default function SignIn() {
         email: values.email,
         password: values.password,
       }).unwrap();
+      const path = getDashboardRoute(data?.access)
 
-      router.push("/dashboard");
+      router.push(path);
     } catch (error: any) {
-    
+
       form.setError("root", {
         message:
           error?.data?.detail || "Invalid email or password",
