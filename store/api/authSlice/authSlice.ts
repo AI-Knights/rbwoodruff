@@ -16,7 +16,7 @@ const authSlice = api.injectEndpoints({
         }),
         signInUser: builder.mutation<{ refresh: string; access: string }, { email: string; password: string }>({
             query: (userInfo) => ({
-                url: "/auth/token/",
+                url: "/auth/login/",
                 method: "POST",
                 body: userInfo
             }),
