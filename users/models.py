@@ -114,6 +114,13 @@ class Employer(models.Model):
 
 class TrainingProvider(models.Model):
     """Profile for training provider accounts"""
+    
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('verified', 'Verified'),
+        ('banned', 'Banned'),
+    ]
+    
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='trainer_profile')
     
@@ -122,9 +129,8 @@ class TrainingProvider(models.Model):
     skills = ArrayField(models.CharField(max_length=50))  # Required - must provide at least one skill
     bio = models.TextField()  # Required
     
-    # Verification
-    is_verified = models.BooleanField(default=False)
-    verification_date = models.DateTimeField(null=True, blank=True)
+    # Status
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     
     # Performance metrics (calculated fields)
     total_learners = models.IntegerField(default=0)
@@ -137,13 +143,14 @@ class TrainingProvider(models.Model):
         return f"Trainer: {self.user.full_name} - {self.specialization}"
 
 
+
 class Agency(models.Model):
     """Profile for rehabilitation agency accounts"""
     
-    APPROVAL_STATUS_CHOICES = [
+    STATUS_CHOICES = [
         ('pending', 'Pending'),
-        ('approved', 'Approved'),
-        ('rejected', 'Rejected'),
+        ('verified', 'Verified'),
+        ('banned', 'Banned'),
     ]
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -161,11 +168,8 @@ class Agency(models.Model):
     document_public_id = models.CharField(max_length=255, blank=True, default='', help_text="Cloudinary public_id for the verification document")
     document_url = models.URLField(blank=True, default='', help_text="Direct URL to the verification document")
     
-    
-    # Approval workflow
-    approval_status = models.CharField(max_length=20, choices=APPROVAL_STATUS_CHOICES, default='pending')
-    is_verified = models.BooleanField(default=False)
-    verification_date = models.DateTimeField(null=True, blank=True)
+    # Status
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

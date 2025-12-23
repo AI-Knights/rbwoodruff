@@ -46,18 +46,18 @@ class EmployerAdmin(admin.ModelAdmin):
 
 @admin.register(TrainingProvider)
 class TrainingProviderAdmin(admin.ModelAdmin):
-    list_display = ('user', 'specialization', 'is_verified', 'total_learners', 'created_at')
-    list_filter = ('is_verified', 'created_at')
+    list_display = ('user', 'specialization', 'status', 'total_learners', 'created_at')
+    list_filter = ('status', 'created_at')
     search_fields = ('user__email', 'specialization')
-    readonly_fields = ('created_at', 'updated_at', 'verification_date', 'total_learners', 'average_completion_rate')
+    readonly_fields = ('created_at', 'updated_at', 'total_learners', 'average_completion_rate')
 
 
 @admin.register(Agency)
 class AgencyAdmin(admin.ModelAdmin):
-    list_display = ('user', 'agency_name', 'agency_id', 'approval_status', 'is_verified', 'created_at')
-    list_filter = ('approval_status', 'is_verified', 'created_at')
+    list_display = ('user', 'agency_name', 'agency_id', 'status', 'created_at')
+    list_filter = ('status', 'created_at')
     search_fields = ('user__email', 'agency_name', 'agency_id')
-    readonly_fields = ('created_at', 'updated_at', 'verification_date')
+    readonly_fields = ('created_at', 'updated_at')
 
 
 # ===== JOB MODELS =====

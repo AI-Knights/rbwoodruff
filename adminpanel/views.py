@@ -45,9 +45,9 @@ class AdminDashboardView(APIView):
         ).aggregate(total=Sum('amount'))['total'] or 0
         
         # Pending verifications
-        pending_agencies = Agency.objects.filter(approval_status='pending').count()
+        pending_agencies = Agency.objects.filter(status='pending').count()
         pending_employers = Employer.objects.filter(status='pending').count()
-        pending_trainers = TrainingProvider.objects.filter(is_verified=False).count()
+        pending_trainers = TrainingProvider.objects.filter(status='pending').count()
         pending_verifications = pending_agencies + pending_employers + pending_trainers
         
         # Placement rate
@@ -78,7 +78,7 @@ class AgencyListView(generics.ListAPIView):
         queryset = Agency.objects.all()
         
         if status_filter:
-            queryset = queryset.filter(approval_status=status_filter)
+            queryset = queryset.filter(status=status_filter)
         
         return queryset.order_by('-created_at')
 
@@ -89,38 +89,44 @@ class PendingAgenciesView(generics.ListAPIView):
     permission_classes = [IsAuthenticated, IsAdmin]
     
     def get_queryset(self):
-        return Agency.objects.filter(approval_status='pending').order_by('-created_at')
+        return Agency.objects.filter(status='pending').order_by('-created_at')
 
 
 class ApproveAgencyView(APIView):
-    """Approve or reject agency"""
+    """Update agency status (verify, banned, or pending)"""
     permission_classes = [IsAuthenticated, IsAdmin]
     
     def post(self, request, agency_id):
         agency = get_object_or_404(Agency, id=agency_id)
         
-        action = request.data.get('action')  # 'approve' or 'reject'
+        action = request.data.get('action')  # 'verify', 'banned', or 'pending'
         
-        if action == 'approve':
-            agency.approval_status = 'approved'
-            agency.is_verified = True
-            agency.verification_date = timezone.now()
+        if action == 'verify':
+            agency.status = 'verified'
             agency.save()
             
             return Response({
-                'message': 'Agency approved successfully'
+                'message': 'Agency verified successfully'
             }, status=status.HTTP_200_OK)
             
-        elif action == 'reject':
-            agency.approval_status = 'rejected'
+        elif action == 'banned':
+            agency.status = 'banned'
             agency.save()
             
             return Response({
-                'message': 'Agency rejected'
+                'message': 'Agency banned'
+            }, status=status.HTTP_200_OK)
+        
+        elif action == 'pending':
+            agency.status = 'pending'
+            agency.save()
+            
+            return Response({
+                'message': 'Agency status set to pending'
             }, status=status.HTTP_200_OK)
         
         return Response({
-            'error': 'Invalid action'
+            'error': 'Invalid action. Use "verify", "banned", or "pending"'
         }, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -140,13 +146,13 @@ class EmployerListView(generics.ListAPIView):
 
 
 class VerifyEmployerView(APIView):
-    """Update employer status (verify, ban, or set to pending)"""
+    """Update employer status (verify, banned, or pending)"""
     permission_classes = [IsAuthenticated, IsAdmin]
     
     def post(self, request, employer_id):
         employer = get_object_or_404(Employer, id=employer_id)
         
-        action = request.data.get('action')  # 'verify', 'ban', or 'pending'
+        action = request.data.get('action')  # 'verify', 'banned', or 'pending'
         
         if action == 'verify':
             employer.status = 'verified'
@@ -156,7 +162,7 @@ class VerifyEmployerView(APIView):
                 'message': 'Employer verified successfully'
             }, status=status.HTTP_200_OK)
             
-        elif action == 'ban':
+        elif action == 'banned':
             employer.status = 'banned'
             employer.save()
             
@@ -176,7 +182,7 @@ class VerifyEmployerView(APIView):
             }, status=status.HTTP_200_OK)
         
         return Response({
-            'error': 'Invalid action. Use "verify", "ban", or "pending"'
+            'error': 'Invalid action. Use "verify", "banned", or "pending"'
         }, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -186,46 +192,53 @@ class TrainerListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated, IsAdmin]
     
     def get_queryset(self):
-        verified = self.request.query_params.get('verified', None)
+        status_filter = self.request.query_params.get('status', None)
         queryset = TrainingProvider.objects.all()
         
-        if verified is not None:
-            queryset = queryset.filter(is_verified=verified.lower() == 'true')
+        if status_filter:
+            queryset = queryset.filter(status=status_filter)
         
         return queryset.order_by('-created_at')
 
 
 class VerifyTrainerView(APIView):
-    """Verify or suspend training provider"""
+    """Update trainer status (verify, banned, or pending)"""
     permission_classes = [IsAuthenticated, IsAdmin]
     
     def post(self, request, trainer_id):
         trainer = get_object_or_404(TrainingProvider, id=trainer_id)
         
-        action = request.data.get('action')  # 'verify' or 'suspend'
+        action = request.data.get('action')  # 'verify', 'banned', or 'pending'
         
         if action == 'verify':
-            trainer.is_verified = True
-            trainer.verification_date = timezone.now()
+            trainer.status = 'verified'
             trainer.save()
             
             return Response({
                 'message': 'Trainer verified successfully'
             }, status=status.HTTP_200_OK)
             
-        elif action == 'suspend':
-            trainer.is_verified = False
+        elif action == 'banned':
+            trainer.status = 'banned'
             trainer.save()
             
             # Optionally deactivate all programs
             TrainingProgram.objects.filter(provider=trainer, is_active=True).update(is_active=False)
             
             return Response({
-                'message': 'Trainer suspended'
+                'message': 'Trainer banned'
+            }, status=status.HTTP_200_OK)
+        
+        elif action == 'pending':
+            trainer.status = 'pending'
+            trainer.save()
+            
+            return Response({
+                'message': 'Trainer status set to pending'
             }, status=status.HTTP_200_OK)
         
         return Response({
-            'error': 'Invalid action'
+            'error': 'Invalid action. Use "verify", "banned", or "pending"'
         }, status=status.HTTP_400_BAD_REQUEST)
 
 

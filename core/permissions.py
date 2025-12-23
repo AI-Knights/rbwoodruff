@@ -86,7 +86,7 @@ class IsVerifiedTrainingProvider(permissions.BasePermission):
             return False
         
         try:
-            return request.user.trainer_profile.is_verified
+            return request.user.trainer_profile.status == 'verified'
         except:
             return False
 
@@ -113,7 +113,7 @@ class IsVerifiedAgency(permissions.BasePermission):
             return False
         
         try:
-            return request.user.agency_profile.is_verified
+            return request.user.agency_profile.status == 'verified'
         except:
             return False
 

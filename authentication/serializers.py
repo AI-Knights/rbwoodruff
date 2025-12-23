@@ -34,17 +34,39 @@ class TrainingProviderSerializer(serializers.ModelSerializer):
         fields = ["specialization", "experience", "skills", "bio"]  # All required
 
 class AgencySerializer(serializers.ModelSerializer):
+    documents = serializers.ListField(
+        child=serializers.DictField(),
+        write_only=True,
+        required=True,
+        help_text="Array of document objects with 'public_id' and 'url' fields"
+    )
+    
     class Meta:
         model = Agency
         fields = [
             "agency_name", "agency_id", "address", "representative_name",
-            "document_public_id", "document_url"
+            "documents"
         ]
         extra_kwargs = {
             'representative_name': {'required': False},  # Optional
-            'document_public_id': {'required': True},  # Required from frontend
-            'document_url': {'required': True}  # Required from frontend
         }
+    
+    def create(self, validated_data):
+        # Extract documents and other preprocessed fields
+        documents_data = validated_data.pop('documents', None)
+        verification_documents = validated_data.pop('verification_documents', [])
+        document_public_id = validated_data.pop('document_public_id', '')
+        document_url = validated_data.pop('document_url', '')
+        
+        # Create the agency with all fields
+        agency = Agency.objects.create(
+            verification_documents=verification_documents,
+            document_public_id=document_public_id,
+            document_url=document_url,
+            **validated_data
+        )
+        
+        return agency
 
 
 
@@ -73,24 +95,45 @@ class RegisterSerializer(serializers.ModelSerializer):
                 if user_type == "agency":
                     from core.utils import move_cloudinary_document
                     
-                    document_public_id = validated_data['data'].get('document_public_id')
-                    document_url = validated_data['data'].get('document_url')
+                    documents = validated_data['data'].get('documents', [])
                     
-                    if document_public_id and document_url:
-                        try:
-
+                    if not documents or len(documents) == 0:
+                        raise serializers.ValidationError("At least one document is required for agency registration")
+                    
+                    moved_documents = []
+                    
+                    try:
+                        # Process all documents
+                        for idx, doc in enumerate(documents):
+                            public_id = doc.get('public_id')
+                            url = doc.get('url')
+                            
+                            if not public_id or not url:
+                                raise serializers.ValidationError(f"Document {idx + 1} is missing 'public_id' or 'url'")
+                            
                             moved_doc = move_cloudinary_document(
-                                public_id=document_public_id,
+                                public_id=public_id,
                                 user_id=str(user.id),
                                 document_type='verification'
                             )
                             
-                            validated_data['data']['document_public_id'] = moved_doc['public_id']
-                            validated_data['data']['document_url'] = moved_doc.get('secure_url') or moved_doc.get('url')
-                            
-                        except Exception as e:
-                            logger.error(f"Failed to move document for agency {user.email}: {e}")
-                            raise serializers.ValidationError(f"Document upload failed: {str(e)}")
+                            moved_documents.append({
+                                'public_id': moved_doc['public_id'],
+                                'url': moved_doc.get('secure_url') or moved_doc.get('url')
+                            })
+                        
+                        # Store all documents in verification_documents
+                        validated_data['data']['verification_documents'] = moved_documents
+                        
+                        # Set the first document as primary
+                        validated_data['data']['document_public_id'] = moved_documents[0]['public_id']
+                        validated_data['data']['document_url'] = moved_documents[0]['url']
+                        
+                    except serializers.ValidationError:
+                        raise
+                    except Exception as e:
+                        logger.error(f"Failed to move documents for agency {user.email}: {e}")
+                        raise serializers.ValidationError(f"Document upload failed: {str(e)}")
                 
                 if user_type == "general":
                     val = GeneralUserSerializer(data=validated_data['data'])
@@ -217,7 +260,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
                 return {
                     'specialization': profile.specialization,
                     'experience': profile.experience,
-                    'is_verified': profile.is_verified,
+                    'status': profile.status,
                     'total_learners': profile.total_learners
                 }
             elif obj.user_type == 'agency':
@@ -226,8 +269,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
                     'agency_name': profile.agency_name,
                     'agency_id': profile.agency_id,
                     'address': profile.address,
-                    'approval_status': profile.approval_status,
-                    'is_verified': profile.is_verified
+                    'status': profile.status,
+                    'verification_documents': profile.verification_documents,
+                    'document_public_id': profile.document_public_id,
+                    'document_url': profile.document_url
                 }
             return None
         except:

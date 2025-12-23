@@ -25,7 +25,8 @@ class AgencyVerificationSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'user', 'user_email', 'agency_id', 'agency_name',
             'representative_name', 'address', 'verification_documents',
-            'approval_status', 'is_verified', 'created_at'
+            'document_public_id', 'document_url',
+            'status', 'created_at'
         ]
 
 
@@ -54,7 +55,7 @@ class TrainerVerificationSerializer(serializers.ModelSerializer):
         model = TrainingProvider
         fields = [
             'id', 'user', 'user_email', 'trainer_name', 'specialization', 'experience',
-            'is_verified', 'total_learners', 'average_completion_rate', 'total_programs',
+            'status', 'total_learners', 'average_completion_rate', 'total_programs',
             'created_at'
         ]
     
