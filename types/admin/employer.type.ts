@@ -5,7 +5,7 @@ export interface Employer {
   company_name: string;
   industry: string;
   office_location: string;
-  is_verified: 'verified' | 'pending' | 'banned';
+  status: 'verified' | 'pending' | 'banned';
   total_jobs: number;
   created_at: string;
 }

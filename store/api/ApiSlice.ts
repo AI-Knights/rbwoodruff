@@ -3,7 +3,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 export const api = createApi({
   reducerPath: "api",
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://10.10.13.22:8000",
+    baseUrl: "http://10.10.13.22:8005",
     prepareHeaders: (headers, { endpoint }) => {
       if (endpoint !== "updateProfile") {
         headers.set("Content-Type", "application/json");
@@ -22,6 +22,6 @@ export const api = createApi({
       return headers;
     },
   }),
-  tagTypes: ["Employer"],
+  tagTypes: ["Employer","Trainer","Payment", "Trainee"],
   endpoints: () => ({}),
 });
