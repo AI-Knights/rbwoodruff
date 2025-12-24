@@ -15,12 +15,13 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { useSendOtpMutation, useVerifyEmailMutation } from "@/store/api/authSlice/authSlice";
+import { useForgotPasswordMutation, useSendOtpMutation, useVerifyEmailMutation, useVerifyResetOtpMutation } from "@/store/api/authSlice/authSlice";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store/store";
 import { toast } from "sonner";
 import { ErrorResponse } from "@/types/error/error";
 import { getErrorMessage } from "@/lib/globalError/error";
+import { getToken, setToken } from "@/lib/manage_token";
 
 
 const otpSchema = z.object({
@@ -33,6 +34,8 @@ const otpSchema = z.object({
 type OTPFormValues = z.infer<typeof otpSchema>;
 
 export default function VerificationPage() {
+  const [verifyResetOtp] = useVerifyResetOtpMutation()
+  const [forgotPassword] = useForgotPasswordMutation()
   const [sendOtp, { isLoading }] = useSendOtpMutation()
   const [verifyEmail, { isLoading: loading }] = useVerifyEmailMutation()
   const inputsRef = useRef<(HTMLInputElement | null)[]>(Array(6).fill(null));
@@ -91,42 +94,56 @@ export default function VerificationPage() {
     e.preventDefault();
   };
 
-
   const handleResend = async () => {
     setResendTimer(57);
     setCanResend(false);
     form.reset({ otp: "" });
     inputsRef.current[0]?.focus();
-    try {
 
-      const response = await sendOtp({ email: data.email }).unwrap()
-      toast.success(response.message)
+    try {
+      if (data.route === "forogt-password") {
+        const response = await forgotPassword({ email: data.email }).unwrap();
+        toast.success(response.message);
+        setToken({ token_name: "rest_token", reset_token: response.reset_token });
+      } else {
+        const response = await sendOtp({ email: data.email }).unwrap();
+        toast.success(response.message);
+      }
     } catch (e) {
-      const error = e as { data: ErrorResponse }
-      toast.error(getErrorMessage(error.data))
+      const error = e as { data: ErrorResponse };
+      toast.error(getErrorMessage(error.data));
     }
   };
+
   const step = 3;
 
   const onSubmit = async (values: OTPFormValues) => {
     try {
-      const response = await verifyEmail({ email: data.email, otp: values.otp }).unwrap();
-      console.log("OTP Verified:", response);
-      const isForgotPage = data.route === "forogt-password" ? true : false
-      router.push(isForgotPage ? "/auth/create-new-password" : "/auth/sign-in");
-      toast.success(response.message)
+      if (data.route === "forogt-password") {
+        // Forgot password flow
+        const response = await verifyResetOtp({
+          reset_token: getToken({ token_name: "rest_token" }) || "",
+          otp: values.otp
+        }).unwrap();
+        setToken({ token_name: "rest_token", reset_token: response.reset_token });
+        toast.success(response.message);
+        router.push("/auth/create-new-password");
+      } else {
+        // Normal email verification flow
+        const response = await verifyEmail({ email: data.email, otp: values.otp }).unwrap();
+        toast.success(response.message);
+        router.push("/auth/sign-in");
+      }
     } catch (err: any) {
-      const error = err as { data: ErrorResponse }
-      const message = getErrorMessage(error.data)
-      // err.data contains server response
-      toast.error(message)
-      console.log(message)
+      const error = err as { data: ErrorResponse };
+      const message = getErrorMessage(error?.data);
+      toast.error(message || "Invalid OTP");
+
       form.setError("otp", {
         type: "server",
         message: message || "Invalid OTP",
       });
     }
-    // redirect('/auth/welcome')
   };
 
 
@@ -144,7 +161,7 @@ export default function VerificationPage() {
           </p>
 
           {
-            data.route == "employer" ? "" : <div className="flex justify-center items-center mb-10">
+            data.route == "employer" || "forogt-password" ? "" : <div className="flex justify-center items-center mb-10">
               <div
                 className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all ${step >= 1 ? "bg-[#6A0DAD] text-white" : "bg-gray-300"
                   }`}

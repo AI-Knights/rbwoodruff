@@ -40,7 +40,7 @@ const authSlice = api.injectEndpoints({
             })
 
         }),
-        forgotPassword: builder.mutation<{ message: string }, { email: string }>({
+        forgotPassword: builder.mutation<{ message: string, reset_token: string }, { email: string }>({
             query: ({ email }) => ({
                 url: '/auth/password-reset-request/',
                 method: "POST",
@@ -49,6 +49,22 @@ const authSlice = api.injectEndpoints({
 
         }),
 
+        verifyResetOtp: builder.mutation<{ message: string, reset_token: string }, { reset_token: string, otp: string }>({
+            query: ({ reset_token, otp }) => ({
+                url: '/auth/password-reset-verify-otp/',
+                method: "POST",
+                body: { reset_token, otp }
+            })
+
+        }),
+        confirmPassword: builder.mutation<{ message: string }, { reset_token: string, new_password: string }>({
+            query: ({ reset_token, new_password }) => ({
+                url: '/auth/password-reset-confirm/',
+                method: "POST",
+                body: { reset_token, new_password }
+            })
+
+        }),
         verifyEmail: builder.mutation<{ message: string; email: string }, { otp: string, email: string }>({
             query: ({ otp, email }) => ({
                 url: "/auth/verify-otp/",
@@ -60,4 +76,4 @@ const authSlice = api.injectEndpoints({
 })
 
 
-export const { useCreateAccountMutation, useSignInUserMutation, useVerifyEmailMutation, useSendOtpMutation , useForgotPasswordMutation } = authSlice
+export const { useCreateAccountMutation, useConfirmPasswordMutation, useSignInUserMutation, useVerifyResetOtpMutation, useVerifyEmailMutation, useSendOtpMutation, useForgotPasswordMutation } = authSlice

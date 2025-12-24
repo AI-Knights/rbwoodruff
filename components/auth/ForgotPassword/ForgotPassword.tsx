@@ -14,37 +14,38 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import Image from "next/image";
-import { forgotPassword } from "@/validation"; // আপনার schema
-import { useRouter } from "next/navigation"; // এটা যোগ করুন
+import { forgotPassword } from "@/validation"; 
+import { useRouter } from "next/navigation"; 
 import { useForgotPasswordMutation } from "@/store/api/authSlice/authSlice";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/globalError/error";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/store/store";
 import { setEmail } from "@/store/api/authSlice/emailSlice/emailSlice";
+import { setToken, setTokenInCookies } from "@/lib/manage_token";
 
 export default function ForgotPassword() {
   const [resetPassword] = useForgotPasswordMutation();
-  const router = useRouter(); // redirect এর পরিবর্তে এটা ব্যবহার করুন
+  const router = useRouter();
   const dispatch: AppDispatch = useDispatch();
 
   const form = useForm<z.infer<typeof forgotPassword>>({
     resolver: zodResolver(forgotPassword),
-    mode: "onChange", // এটা খুব জরুরি — রিয়েল টাইমে ভ্যালিডেশনের জন্য
+    mode: "onChange", 
     defaultValues: {
       email: "",
     },
   });
 
-  const { isValid, isSubmitting } = form.formState; // এভাবে ডিস্ট্রাকচার করুন
+  const { isValid, isSubmitting } = form.formState; 
 
   async function onSubmit(values: z.infer<typeof forgotPassword>) {
     try {
       dispatch(setEmail({ email: values.email, route: "forogt-password" }));
-      const res = await resetPassword(values).unwrap(); // .unwrap() দিয়ে data পান
+      const res = await resetPassword(values).unwrap(); 
       toast.success(res?.message || "OTP sent successfully!");
-
-      // redirect এর পরিবর্তে router.push ব্যবহার করুন
+      setToken({ token_name: "rest_token", reset_token: res.reset_token })
+      
       router.push("/auth/verification");
     } catch (e: any) {
       const message = getErrorMessage(e?.data);
@@ -89,7 +90,7 @@ export default function ForgotPassword() {
 
           <Button
             type="submit"
-            disabled={!isValid || isSubmitting} // এখানে disabled যোগ করুন
+            disabled={!isValid || isSubmitting} 
             className="w-full bg-[#6A0DAD] hover:bg-[#7812c0] py-6 text-white font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? "Sending..." : "Send"}
