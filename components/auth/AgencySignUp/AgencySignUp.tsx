@@ -5,6 +5,9 @@ import React, { useState } from "react";
 import AgencySignUpStepTow from "./AgencySignUpStepTow";
 import AgencySignUpStepOne from "./AgencySignUpStepOne";
 import { useCreateAccountMutation } from "@/store/api/authSlice/authSlice";
+import { toast } from "sonner";
+import { ErrorResponse } from "@/types/error/error";
+import { getErrorMessage } from "@/lib/globalError/error";
 
 export default function AgencySignUp() {
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -29,7 +32,7 @@ export default function AgencySignUp() {
     console.log("final data : ", fullData)
     console.log("final data : ", data)
     try {
-      await createUser({
+      const res = await createUser({
         full_name: fullData.representative_name,
         email: fullData.email,
         password: fullData.password,
@@ -44,10 +47,12 @@ export default function AgencySignUp() {
           }))
         },
       }).unwrap();
-
+      toast.success(res.message)
       router.push("/auth/verification")
 
     } catch (error) {
+      const e = error as { data: ErrorResponse }
+      toast.error(getErrorMessage(e.data))
       console.error("Registration failed:", error);
       // alert("Error during registration");
     }

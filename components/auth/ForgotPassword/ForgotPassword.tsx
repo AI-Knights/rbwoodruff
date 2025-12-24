@@ -2,72 +2,86 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import Company from "@/assets/company.svg";
-import Loaction from "@/assets/loaction.svg";
-import Lock from "@/assets/lock.svg";
-import Email from "@/assets/email.svg";
-import { email, z } from "zod";
-
+import EmailIcon from "@/assets/email.svg";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
-  FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import Image from "next/image";
-import { forgotPassword, formSchema } from "@/validation";
-import { redirect } from "next/navigation";
+import { forgotPassword } from "@/validation"; // আপনার schema
+import { useRouter } from "next/navigation"; // এটা যোগ করুন
+import { useForgotPasswordMutation } from "@/store/api/authSlice/authSlice";
+import { toast } from "sonner";
+import { getErrorMessage } from "@/lib/globalError/error";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "@/store/store";
+import { setEmail } from "@/store/api/authSlice/emailSlice/emailSlice";
 
 export default function ForgotPassword() {
+  const [resetPassword] = useForgotPasswordMutation();
+  const router = useRouter(); // redirect এর পরিবর্তে এটা ব্যবহার করুন
+  const dispatch: AppDispatch = useDispatch();
+
   const form = useForm<z.infer<typeof forgotPassword>>({
     resolver: zodResolver(forgotPassword),
+    mode: "onChange", // এটা খুব জরুরি — রিয়েল টাইমে ভ্যালিডেশনের জন্য
     defaultValues: {
       email: "",
     },
   });
 
-  function onSubmit(values: z.infer<typeof forgotPassword>) {
-    console.log(values);
-    redirect("/auth/verification");
+  const { isValid, isSubmitting } = form.formState; // এভাবে ডিস্ট্রাকচার করুন
+
+  async function onSubmit(values: z.infer<typeof forgotPassword>) {
+    try {
+      dispatch(setEmail({ email: values.email, route: "forogt-password" }));
+      const res = await resetPassword(values).unwrap(); // .unwrap() দিয়ে data পান
+      toast.success(res?.message || "OTP sent successfully!");
+
+      // redirect এর পরিবর্তে router.push ব্যবহার করুন
+      router.push("/auth/verification");
+    } catch (e: any) {
+      const message = getErrorMessage(e?.data);
+      toast.error(message || "Something went wrong");
+    }
   }
+
   return (
     <div className="md:max-w-[702px] w-full p-4 border rounded-2xl md:px-14 py-8 flex flex-col gap-10 md:gap-14 mx-auto">
       <div className="flex flex-col text-center">
         <h1 className="text-center font-bold py-2 text-5xl">Forgot Password</h1>
       </div>
+
       <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit(onSubmit)}
-          className="space-y-8 md:space-y-12"
-        >
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 md:space-y-12">
           <FormField
             control={form.control}
             name="email"
             render={({ field }) => (
               <FormItem>
                 <FormControl>
-                  <div className="relative flex flex-row gap-3 items-center border-b border-gray-300  transition-colors">
+                  <div className="relative flex flex-row gap-3 items-center border-b border-gray-300 transition-colors">
                     <Image
-                      src={Email}
+                      src={EmailIcon}
                       height={20}
                       width={20}
-                      alt="company"
+                      alt="email"
                       className="absolute left-0 pointer-events-none text-gray-500"
                     />
-
                     <Input
-                      className="border-0 outline-none  pl-8 shadow-none  border-b  rounded-none  ring-0  focus:ring-0  focus:outline-none  focus:border-b  focus-visible:ring-0  focus-visible:outline-none"
+                      type="email"
                       placeholder="Company email"
+                      className="border-0 outline-none pl-8 shadow-none rounded-none ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:outline-none focus:border-b-2 focus:border-b-purple-600"
                       {...field}
                     />
                   </div>
                 </FormControl>
-
                 <FormMessage />
               </FormItem>
             )}
@@ -75,9 +89,10 @@ export default function ForgotPassword() {
 
           <Button
             type="submit"
-            className="w-full bg-[#6A0DAD] py-6 cursor-pointer"
+            disabled={!isValid || isSubmitting} // এখানে disabled যোগ করুন
+            className="w-full bg-[#6A0DAD] hover:bg-[#7812c0] py-6 text-white font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Send
+            {isSubmitting ? "Sending..." : "Send"}
           </Button>
         </form>
       </Form>

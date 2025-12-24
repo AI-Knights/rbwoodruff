@@ -13,6 +13,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import Logo from "../elements/Logo";
 import { clearAuthCookies } from "@/lib/manage_token";
+import { toast } from "sonner";
 
 
 const Sidebar = ({
@@ -45,6 +46,7 @@ const Sidebar = ({
 
   const handleLogout = () => {
     clearAuthCookies()
+    toast.success('logout successfull')
     router.push("/auth")
   }
 
@@ -97,8 +99,8 @@ const Sidebar = ({
                       href={route.path}
                       onClick={() => onClose()} // Close sidebar on mobile when clicking a link
                       className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors text-lg font-semibold ${isActive
-                          ? "bg-blue-50 text-blue-600"
-                          : "text-[#854C3A] hover:bg-gray-50"
+                        ? "bg-blue-50 text-blue-600"
+                        : "text-[#854C3A] hover:bg-gray-50"
                         }`}
                     >
                       <Icon className="h-5 w-5" />

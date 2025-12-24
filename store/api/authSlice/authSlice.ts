@@ -40,6 +40,14 @@ const authSlice = api.injectEndpoints({
             })
 
         }),
+        forgotPassword: builder.mutation<{ message: string }, { email: string }>({
+            query: ({ email }) => ({
+                url: '/auth/password-reset-request/',
+                method: "POST",
+                body: { email }
+            })
+
+        }),
 
         verifyEmail: builder.mutation<{ message: string; email: string }, { otp: string, email: string }>({
             query: ({ otp, email }) => ({
@@ -52,4 +60,4 @@ const authSlice = api.injectEndpoints({
 })
 
 
-export const { useCreateAccountMutation, useSignInUserMutation, useVerifyEmailMutation, useSendOtpMutation } = authSlice
+export const { useCreateAccountMutation, useSignInUserMutation, useVerifyEmailMutation, useSendOtpMutation , useForgotPasswordMutation } = authSlice
