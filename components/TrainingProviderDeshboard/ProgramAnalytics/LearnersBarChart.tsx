@@ -17,6 +17,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { ProgramLearnerSummary } from "@/types/trainer/trainer";
 
 const data = [
   { program: "Logistics", learners: 75 },
@@ -26,7 +27,7 @@ const data = [
   { program: "Construction", learners: 80 },
 ];
 
-export default function LearnersBarChart() {
+export default function LearnersBarChart({info} : {info : ProgramLearnerSummary[] }) {
   return (
     <div>
       <div className=" p-4 md:p-8">
@@ -41,7 +42,7 @@ export default function LearnersBarChart() {
               <div className="h-96 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
-                    data={data}
+                    data={info}
                     margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                   >
                     <CartesianGrid
@@ -49,7 +50,7 @@ export default function LearnersBarChart() {
                       className="stroke-gray-200"
                     />
                     <XAxis
-                      dataKey="program"
+                      dataKey="program_name"
                       tick={{ fill: "#374151" }}
                       tickLine={{ stroke: "#9CA3AF" }}
                     />
@@ -74,7 +75,7 @@ export default function LearnersBarChart() {
                     />
                     <Line
                       type="monotone"
-                      dataKey="learners"
+                      dataKey="total_learners"
                       stroke="#82CA9D"
                       strokeWidth={3}
                       dot={{ fill: "#82CA9D", r: 6 }}

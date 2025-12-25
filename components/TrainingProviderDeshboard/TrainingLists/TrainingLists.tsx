@@ -1,153 +1,139 @@
-
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Delete, Eye, SearchIcon } from "lucide-react";
-import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
-import { cn } from "@/lib/utils";
+import { Delete, DeleteIcon, Eye, Search, Trash } from "lucide-react"; // Changed SearchIcon to Search
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import DeleteTrainingDialog from "./DeleteTrainingDialog";
-import { useState } from "react";
-
-interface ITraining {
-    id: string;
-    training_Name: string;
-    training_Link: string;
-    training_Duration: string;
-    training_Deadline: string;
-}
-
-const trainingData: ITraining[] = [
-    {
-        id: "1",
-        training_Name: "Graphics Design & Freelancing",
-        training_Link: "https://bohubrihi.com/courses/graphics-design",
-        training_Duration: "4 Months",
-        training_Deadline: "30 Nov, 2025",
-    },
-    {
-        id: "2",
-        training_Name: "Digital Marketing Professional",
-        training_Link: "https://10minuteschool.com/courses/digital-marketing",
-        training_Duration: "6 Months",
-        training_Deadline: "15 Dec, 2025",
-    },
-    {
-        id: "3",
-        training_Name: "Full Stack Web Development (MERN)",
-        training_Link: "https://programming-hero.com/course/web-development",
-        training_Duration: "7 Months",
-        training_Deadline: "25 Nov, 2025",
-    },
-    {
-        id: "4",
-        training_Name: "Flutter Mobile App Development",
-        training_Link: "https://learnwithsumit.com/courses/flutter",
-        training_Duration: "5 Months",
-        training_Deadline: "10 Dec, 2025",
-    },
-    {
-        id: "5",
-        training_Name: "Professional Video Editing",
-        training_Link: "https://bit.lms.gov.bd/course/video-editing",
-        training_Duration: "3 Months",
-        training_Deadline: "20 Nov, 2025",
-    },
-    {
-        id: "6",
-        training_Name: "UI/UX Design with Figma",
-        training_Link: "https://uidesign.school/course/ui-ux",
-        training_Duration: "4 Months",
-        training_Deadline: "30 Nov, 2025",
-    },
-    {
-        id: "7",
-        training_Name: "Shopify Dropshipping A to Z",
-        training_Link: "https://ecommercebd.com/course/shopify",
-        training_Duration: "2.5 Months",
-        training_Deadline: "12 Dec, 2025",
-    },
-    {
-        id: "8",
-        training_Name: "Data Analytics with Python & Power BI",
-        training_Link: "https://behancer.com/course/data-analytics",
-        training_Duration: "4 Months",
-        training_Deadline: "18 Dec, 2025",
-    },
-    {
-        id: "9",
-        training_Name: "Amazon Affiliate Marketing",
-        training_Link: "https://creativeit.com.bd/course/affiliate-marketing",
-        training_Duration: "3 Months",
-        training_Deadline: "05 Dec, 2025",
-    },
-    {
-        id: "10",
-        training_Name: "CCTV & Networking Professional",
-        training_Link: "https://bit.lms.gov.bd/course/cctv-networking",
-        training_Duration: "3 Months",
-        training_Deadline: "28 Nov, 2025",
-    },
-];
-
-
-
+import { useState, useMemo } from "react";
+import { useProgrammListQuery } from "@/store/api/trainerSlice/trainerSlice";
+import AddTraining from "../AddTraining/AddTraining";
+import { FiDelete } from "react-icons/fi";
 
 export default function TrainingLists() {
-    const [confirm, setConfirm] = useState<boolean>(false)
-    return (
-        <div className="w-full space-y-4">
-          
-            <div>
-                <InputGroup className="bg-white rounded-full w-fit ">
-                    <InputGroupInput placeholder="Search by name or ID" />
-                    <InputGroupAddon>
-                        <SearchIcon />
-                    </InputGroupAddon>
-                </InputGroup>
-            </div>
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const { data, isLoading, isError } = useProgrammListQuery();
 
-            {/* Table */}
-            <div className="border bg-white rounded-lg overflow-hidden">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead className="font-bold" >Training Name</TableHead>
-                            <TableHead className="font-bold" >Training Link</TableHead>
-                            <TableHead className="font-bold" >Training Duration</TableHead>
-                            <TableHead className="font-bold" >Training Deadline</TableHead>
-                            <TableHead className="text-center font-bold">Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {trainingData.map((training) => (
-                            <TableRow key={training.id}>
-                                <TableCell className="font-medium">{training.training_Name}</TableCell>
-                                <TableCell>{training.training_Link}</TableCell>
-                                <TableCell>{training.training_Duration}</TableCell>
-                                <TableCell className="text-green-600 font-medium">
-                                    {training.training_Deadline}
-                                </TableCell>
+  // Filter trainings based on search query (name or id)
+  const filteredTrainings = useMemo(() => {
+    if (!data?.results) return [];
 
-                                <TableCell className="text-center">
-                                    <DeleteTrainingDialog trainingName={training.training_Name} onConfirm={setConfirm} >
-                                        <Button className=" cursor-pointer " variant="ghost" size="icon">
-                                            <Delete></Delete>
+    const query = searchQuery.trim().toLowerCase();
 
-                                        </Button>
-                                    </DeleteTrainingDialog>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </div>
+    if (!query) return data.results;
+
+    return data.results.filter((training) => {
+      return (
+        training.name.toLowerCase().includes(query) ||
+        training.id.toLowerCase().includes(query)
+      );
+    });
+  }, [data?.results, searchQuery]);
+
+  return (
+    <div className="w-full space-y-6">
+      {/* Search Input */}
+      <div className="flex justify-between">
+
+        <InputGroup className="bg-white rounded-full w-full max-w-md shadow-sm">
+          <InputGroupInput
+            placeholder="Search by name or ID..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          <InputGroupAddon>
+            <Search className="h-4 w-4 text-gray-500" />
+
+          </InputGroupAddon>
+        </InputGroup>
+        <div>
+          <AddTraining />
         </div>
-    );
+      </div>
+
+      {/* Loading / Error States */}
+      {isLoading && (
+        <div className="text-center py-8 text-gray-500">Loading trainings...</div>
+      )}
+
+      {isError && (
+        <div className="text-center py-8 text-red-500">
+          Failed to load trainings. Please try again.
+        </div>
+      )}
+
+      {/* Table */}
+      {!isLoading && !isError && (
+        <div className="border bg-white rounded-lg overflow-hidden shadow-sm">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="font-bold">Training Name</TableHead>
+                <TableHead className="font-bold">Training Link</TableHead>
+                <TableHead className="font-bold">Duration</TableHead>
+                <TableHead className="font-bold">Deadline</TableHead>
+                <TableHead className="text-center font-bold">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredTrainings.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                    {searchQuery
+                      ? "No trainings found matching your search."
+                      : "No trainings available."}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredTrainings.map((training) => (
+                  <TableRow key={training.id}>
+                    <TableCell className="font-medium">{training.name}</TableCell>
+                    <TableCell className="max-w-xs truncate">
+                      <a
+                        href={training.external_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline"
+                      >
+                        {training.external_link}
+                      </a>
+                    </TableCell>
+                    <TableCell>
+                      {training.duration} {training.duration_unit}
+                    </TableCell>
+                    <TableCell className="text-green-600 font-medium">
+                      {new Date(training.deadline).toLocaleDateString("en-GB")}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <DeleteTrainingDialog
+                        trainingName={training.name}
+                        trainingId={training.id} // assuming you need id for deletion
+                        onConfirm={() => {
+                          // You can trigger refetch or optimistic update here if needed
+                        }}
+                      >
+                        <Button variant="ghost" size="icon" className="hover:text-red-600">
+                       <Trash/>
+                        </Button>
+                      </DeleteTrainingDialog>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+    </div>
+  );
 }

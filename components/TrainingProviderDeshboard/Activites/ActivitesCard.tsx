@@ -3,7 +3,7 @@ import { type IconType } from "react-icons";
 
 interface ActiviteType {
   title: string;
-  value: number | string;
+  value: number | string | undefined;
   subtitle: string;
   iconColor: string;
   icon: ReactNode;

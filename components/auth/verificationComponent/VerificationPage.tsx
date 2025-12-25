@@ -104,7 +104,7 @@ export default function VerificationPage() {
       if (data.route === "forogt-password") {
         const response = await forgotPassword({ email: data.email }).unwrap();
         toast.success(response.message);
-        setToken({ token_name: "rest_token", reset_token: response.reset_token });
+        setToken({ token_name: "reset_token", reset_token: response.reset_token });
       } else {
         const response = await sendOtp({ email: data.email }).unwrap();
         toast.success(response.message);
@@ -122,10 +122,10 @@ export default function VerificationPage() {
       if (data.route === "forogt-password") {
         // Forgot password flow
         const response = await verifyResetOtp({
-          reset_token: getToken({ token_name: "rest_token" }) || "",
+          reset_token: getToken({ token_name: "reset_token" }) || "",
           otp: values.otp
         }).unwrap();
-        setToken({ token_name: "rest_token", reset_token: response.reset_token });
+        setToken({ token_name: "reset_token", reset_token: response.reset_token });
         toast.success(response.message);
         router.push("/auth/create-new-password");
       } else {

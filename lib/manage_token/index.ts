@@ -35,8 +35,12 @@ export const clearAuthCookies = () => {
     Cookies.remove("access_token", { path: "/" });
     Cookies.remove("refresh_token", { path: "/" });
 };
+export const clearToken = ({ tokenName }: { tokenName: string }) => {
+    Cookies.remove(tokenName, { path: "/" });
 
-export const getToken = ({token_name} : {token_name : string}) =>
+};
+
+export const getToken = ({ token_name }: { token_name: string }) =>
     Cookies.get(token_name);
 
 export const getAccessToken = () =>

@@ -2,7 +2,6 @@
 import { usePathname } from "next/navigation";
 import { Bell, CircleCheck, Info, Menu } from "lucide-react";
 import { Button } from "../ui/button";
-import ProfileDropdown from "./ProfileDropdown";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import Link from "next/link";
 import {

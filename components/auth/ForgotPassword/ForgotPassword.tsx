@@ -44,7 +44,7 @@ export default function ForgotPassword() {
       dispatch(setEmail({ email: values.email, route: "forogt-password" }));
       const res = await resetPassword(values).unwrap(); 
       toast.success(res?.message || "OTP sent successfully!");
-      setToken({ token_name: "rest_token", reset_token: res.reset_token })
+      setToken({ token_name: "reset_token", reset_token: res.reset_token })
       
       router.push("/auth/verification");
     } catch (e: any) {

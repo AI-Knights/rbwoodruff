@@ -12,51 +12,56 @@ import ActivitesCard from "../Activites/ActivitesCard";
 import { Bell, Info, CircleCheck } from "lucide-react";
 import { IoMdCheckmarkCircleOutline } from "react-icons/io";
 import { CiWarning } from "react-icons/ci";
+import { useTrainerOverviewQuery } from "@/store/api/trainerSlice/trainerSlice";
 
 
-const activies = [
-  {
-    title: "Total Learners Referred",
-    value: 8,
-    subtitle: "NEWORXX",
-    iconColor: "#155DFC",
-    icon: <FiUsers className="text-[#155DFC]" />,
-  },
-  {
-    title: "Active Learners",
-    value: 2,
-    subtitle: "Currently Enrolled",
-    iconColor: "#00A63E",
-    icon: <FiUserCheck className="text-[#00A63E]" />,
-  },
-  {
-    title: "Completed Learners",
-    value: 2,
-    subtitle: "Program Graduates",
-    iconColor: "#9810FA",
-    icon: <GiBowlingPropulsion className="text-[#9810FA]" />,
-  },
-  {
-    title: "Pending Enrollment",
-    value: 2,
-    subtitle: "Awaiting start",
-    iconColor: "#F54900",
-    icon: <MdAccessTime className="text-[#F54900]" />,
-  },
-  {
-    title: "Average Completion Rate",
-    value: "38%",
-    subtitle: "Overall Performance",
-    iconColor: "#009966",
-    icon: <GrDocumentPerformance className="text-[#009966]"/>,
-  },
-];
 
 export default function TraingProvider({
   children,
 }: {
   children: React.ReactNode;
 }) {
+
+  const { data } = useTrainerOverviewQuery()
+
+  const activies = [
+    {
+      title: "Total Learners Referred",
+      value: data?.total_learners,
+      subtitle: "NEWORXX",
+      iconColor: "#155DFC",
+      icon: <FiUsers className="text-[#155DFC]" />,
+    },
+    {
+      title: "Active Learners",
+      value: data?.active_learners,
+      subtitle: "Currently Enrolled",
+      iconColor: "#00A63E",
+      icon: <FiUserCheck className="text-[#00A63E]" />,
+    },
+    {
+      title: "Completed Learners",
+      value: data?.completed_learners,
+      subtitle: "Program Graduates",
+      iconColor: "#9810FA",
+      icon: <GiBowlingPropulsion className="text-[#9810FA]" />,
+    },
+    {
+      title: "Pending Enrollment",
+      value: data?.pending_enrollments,
+      subtitle: "Awaiting start",
+      iconColor: "#F54900",
+      icon: <MdAccessTime className="text-[#F54900]" />,
+    },
+    {
+      title: "Average Completion Rate",
+      value: `${data?.average_completion_rate}%`,
+      subtitle: "Overall Performance",
+      iconColor: "#009966",
+      icon: <GrDocumentPerformance className="text-[#009966]" />,
+    },
+  ];
+  console.log(data)
   return (
     <div className="bg-[#F4F4F4]">
       <div className="flex flex-row bg-white shadow  px-8 py-4 justify-between items-center">
@@ -74,13 +79,13 @@ export default function TraingProvider({
         </p>
         <div className="h-14 w-14 rounded-full">
           <Link href={'/profile-employer'} >
-          <Image
-            src={CatImage}
-            className="w-full rounded-full h-full"
-            alt="Profile Image"
-            height={50}
-            width={50}
-          />
+            <Image
+              src={CatImage}
+              className="w-full rounded-full h-full"
+              alt="Profile Image"
+              height={50}
+              width={50}
+            />
           </Link>
         </div>
       </div>

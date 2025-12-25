@@ -1,4 +1,3 @@
-// components/AddTraining.tsx
 "use client";
 
 import { useForm } from "react-hook-form";
@@ -26,19 +25,42 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 
+import {
+  useAllCategorysQuery,
+  useCreateProgrammMutation,
+} from "@/store/api/trainerSlice/trainerSlice";
+
+import { toast } from "sonner";
+
+/* ---------------- Schema ---------------- */
+
 const trainingSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters"),
-  link: z.string().url("Must be a valid URL").or(z.literal("")),
-  duration: z.string().min(1, "Duration is required"),
-  deadline: z.date({
-    message: "Deadline is required",
-  }),
   description: z.string().min(10, "Description must be at least 10 characters"),
+  category: z.string().min(1, "Category is required"),
+  external_link: z.string().url("Must be a valid URL").or(z.literal("")),
+  duration: z.coerce.number().min(1, "Duration is required"),
+  duration_unit: z.enum(["hours", "days", "weeks"]),
+  deadline: z.date({ message: "Deadline is required" }),
+  is_active: z.boolean(),
 });
 
 type TrainingFormData = z.infer<typeof trainingSchema>;
 
+/* ---------------- Component ---------------- */
+
 export default function AddTraining() {
+  const [createProgram] = useCreateProgrammMutation();
+  const { data, isLoading } = useAllCategorysQuery();
+
+  const form = useForm({
+    resolver: zodResolver(trainingSchema),
+    defaultValues: {
+      duration_unit: "hours",
+      is_active: true,
+    },
+  });
+
   const {
     register,
     handleSubmit,
@@ -46,16 +68,31 @@ export default function AddTraining() {
     watch,
     formState: { errors, isSubmitting },
     reset,
-  } = useForm<TrainingFormData>({
-    resolver: zodResolver(trainingSchema),
-  });
+  } = form;
 
   const deadline = watch("deadline");
 
   const onSubmit = async (data: TrainingFormData) => {
-    console.log("Submitted:", data);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    reset();
+    const payload = {
+      name: data.name,
+      description: data.description,
+      category: data.category,
+      external_link: data.external_link,
+      deadline: format(data.deadline, "yyyy-MM-dd"),
+      duration: data.duration,
+      duration_unit: data.duration_unit,
+      is_active: data.is_active,
+    };
+    console.log(payload)
+
+    try {
+      const res = await createProgram(payload).unwrap();
+      toast.success(`${res.name} program created`);
+      reset();
+    } catch (e) {
+      const error = e as { data?: { description?: string } };
+      toast.error(error?.data?.description || "Something went wrong");
+    }
   };
 
   return (
@@ -74,6 +111,7 @@ export default function AddTraining() {
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-10">
+          {/* Name */}
           <div className="space-y-2">
             <Label htmlFor="name">Training Program Name</Label>
             <Input
@@ -86,25 +124,59 @@ export default function AddTraining() {
             )}
           </div>
 
+          {/* Category */}
           <div className="space-y-2">
-            <Label htmlFor="link">Training Link</Label>
-            <Input
-              id="link"
-              type="url"
-              placeholder="https://example.com/course"
-              {...register("link")}
-            />
-            {errors.link && (
-              <p className="text-sm text-red-500">{errors.link.message}</p>
+            <Label htmlFor="category">Category</Label>
+
+            <select
+              id="category"
+              className="w-full border rounded-md px-3 py-2"
+              defaultValue=""
+              {...register("category")}
+            >
+              <option value="" disabled>
+                {isLoading ? "Loading categories..." : "Select a category"}
+              </option>
+
+              {data?.results?.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+
+            {errors.category && (
+              <p className="text-sm text-red-500">
+                {errors.category.message}
+              </p>
             )}
           </div>
 
+          {/* External Link */}
+          <div className="space-y-2">
+            <Label htmlFor="external_link">Training Link</Label>
+            <Input
+              id="external_link"
+              type="url"
+              placeholder="https://training-platform.com/course"
+              {...register("external_link")}
+            />
+            {errors.external_link && (
+              <p className="text-sm text-red-500">
+                {errors.external_link.message}
+              </p>
+            )}
+          </div>
+
+          {/* Duration + Deadline */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Duration */}
             <div className="space-y-2">
-              <Label htmlFor="duration">Training Duration</Label>
+              <Label htmlFor="duration">Duration</Label>
               <Input
                 id="duration"
-                placeholder="e.g., 6 weeks"
+                type="number"
+                placeholder="e.g., 120"
                 {...register("duration")}
               />
               {errors.duration && (
@@ -114,6 +186,7 @@ export default function AddTraining() {
               )}
             </div>
 
+            {/* Deadline */}
             <div className="space-y-2">
               <Label>Deadline</Label>
               <Popover>
@@ -134,7 +207,9 @@ export default function AddTraining() {
                     mode="single"
                     selected={deadline}
                     onSelect={(date) =>
-                      setValue("deadline", date!, { shouldValidate: true })
+                      setValue("deadline", date!, {
+                        shouldValidate: true,
+                      })
                     }
                     initialFocus
                   />
@@ -146,6 +221,24 @@ export default function AddTraining() {
                 </p>
               )}
             </div>
+          </div>
+
+          {/* Duration Unit */}
+          <div className="space-y-2">
+            <Label>Duration Unit</Label>
+            <select
+              className="w-full border rounded-md px-3 py-2"
+              {...register("duration_unit")}
+            >
+              <option value="hours">Hours</option>
+              <option value="days">Days</option>
+              <option value="weeks">Weeks</option>
+            </select>
+            {errors.duration_unit && (
+              <p className="text-sm text-red-500">
+                {errors.duration_unit.message}
+              </p>
+            )}
           </div>
 
           {/* Description */}
@@ -164,11 +257,12 @@ export default function AddTraining() {
             )}
           </div>
 
+          {/* Submit */}
           <div className="flex justify-end">
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="bg-purple-600 px-10 flex flex-row gap-3 cursor-pointer hover:bg-purple-700"
+              className="bg-purple-600 px-10 flex gap-3 hover:bg-purple-700"
             >
               <Plus />
               {isSubmitting ? "Adding..." : "Add"}

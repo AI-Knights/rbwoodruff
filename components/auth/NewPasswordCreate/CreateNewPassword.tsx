@@ -2,8 +2,6 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import Company from "@/assets/company.svg";
-import Loaction from "@/assets/loaction.svg";
 import Lock from "@/assets/lock.svg";
 import Email from "@/assets/email.svg";
 import { email, z } from "zod";
@@ -22,7 +20,7 @@ import { Input } from "@/components/ui/input";
 import Image from "next/image";
 import { createNewPassworSchema } from "@/validation";
 import { redirect, useRouter } from "next/navigation";
-import { getToken } from "@/lib/manage_token";
+import { clearToken, getToken } from "@/lib/manage_token";
 import { toast } from "sonner";
 import { useConfirmPasswordMutation } from "@/store/api/authSlice/authSlice";
 import { ErrorResponse } from "@/types/error/error";
@@ -43,7 +41,7 @@ export default function CreateNewPassword() {
   const onSubmit = async (values: z.infer<typeof createNewPassworSchema>) => {
     try {
       // Get reset token from cookies
-      const reset_token = getToken({ token_name: "rest_token" });
+      const reset_token = getToken({ token_name: "reset_token" });
       if (!reset_token) {
         toast.error("Reset token not found. Please try again.");
         return;
@@ -56,7 +54,8 @@ export default function CreateNewPassword() {
       }).unwrap();
 
       toast.success(response.message);
-      router.push("/auth/sign-in"); // Redirect after success
+      clearToken({ tokenName: "reset_token" })
+      router.push("/auth/sign-in");
     } catch (err) {
       const error = err as { data: { error: string } }
       toast.error(error.data.error || "Failed to reset password");

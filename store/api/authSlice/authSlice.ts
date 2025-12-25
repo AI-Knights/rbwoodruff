@@ -1,6 +1,7 @@
 import { IRegister, UserRegistrationPayload } from "@/types/auth/auth";
 import { api } from "../ApiSlice";
 import { setTokenInCookies } from "@/lib/manage_token";
+import { User } from "@/types/trainer/trainer";
 
 
 const authSlice = api.injectEndpoints({
@@ -71,9 +72,23 @@ const authSlice = api.injectEndpoints({
                 method: "POST",
                 body: { otp, email }
             })
+        }),
+
+        getProfileInfo: builder.query<User, void>({
+            query: () => ({
+                url: "/auth/profile/",
+            })
+        }),
+
+        updateProfile: builder.mutation<User, { profile_pic?: string; full_name: string }>({
+            query: (info) => ({
+                url: "/auth/profile/",
+                method: "PATCH",
+                body: { ...info }
+            })
         })
     })
 })
 
 
-export const { useCreateAccountMutation, useConfirmPasswordMutation, useSignInUserMutation, useVerifyResetOtpMutation, useVerifyEmailMutation, useSendOtpMutation, useForgotPasswordMutation } = authSlice
+export const { useCreateAccountMutation, useUpdateProfileMutation, useConfirmPasswordMutation, useSignInUserMutation, useVerifyResetOtpMutation, useVerifyEmailMutation, useSendOtpMutation, useForgotPasswordMutation, useGetProfileInfoQuery } = authSlice
