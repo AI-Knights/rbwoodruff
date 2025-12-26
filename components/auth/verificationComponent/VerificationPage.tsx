@@ -15,9 +15,10 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { useVerifyEmailMutation } from "@/store/api/authSlice/authSlice";
+import { useSendOtpMutation, useVerifyEmailMutation } from "@/store/api/authSlice/authSlice";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store/store";
+import { toast } from "sonner";
 
 
 const otpSchema = z.object({
@@ -30,7 +31,7 @@ const otpSchema = z.object({
 type OTPFormValues = z.infer<typeof otpSchema>;
 
 export default function VerificationPage() {
-
+  const [sendOtp] = useSendOtpMutation()
   const [verifyEmail] = useVerifyEmailMutation()
   const inputsRef = useRef<(HTMLInputElement | null)[]>(Array(6).fill(null));
   const [resendTimer, setResendTimer] = useState(57);
@@ -89,12 +90,20 @@ export default function VerificationPage() {
   };
 
 
-  const handleResend = () => {
+  const handleResend = async () => {
     setResendTimer(57);
     setCanResend(false);
     form.reset({ otp: "" });
     inputsRef.current[0]?.focus();
-    // TODO: API call to resend OTP
+    try {
+
+      const response = await sendOtp({ email: data })
+      toast.success("sent opt in your gmail")
+    } catch (e) {
+      if (e instanceof Error) {
+        toast.warning(e.message)
+      }
+    }
   };
 
 
@@ -179,7 +188,7 @@ export default function VerificationPage() {
             {canResend ? (
               <button
                 onClick={handleResend}
-                className="text-purple-600 hover:underline font-medium"
+                className="text-purple-600 cursor-pointer  hover:underline font-medium"
               >
                 Resend code
               </button>

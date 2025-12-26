@@ -24,6 +24,8 @@ import { Input } from "@/components/ui/input";
 import Image from "next/image";
 import { TrainerStep1, trainerStep1Schema } from "@/validation";
 import { User } from "lucide-react";
+import { useDispatch } from "react-redux";
+import { setEmail } from "@/store/api/authSlice/emailSlice/emailSlice";
 
 interface AgencyType {
   onNext: (data: AgencyStep1) => void;
@@ -44,8 +46,9 @@ export default function AgencySignUpStepOne({
       confirm_password: "",
     },
   });
-
+  const dispatch = useDispatch()
   const onSubmit = (data: AgencyStep1) => {
+    dispatch(setEmail(data.email))
     onNext(data);
   };
 

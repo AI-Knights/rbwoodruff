@@ -2,7 +2,6 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -14,101 +13,155 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-
-const jobPostSchema = z.object({
-  jobTitle: z.string().min(3, "Job title must be at least 3 characters"),
-  jobCategory: z.string().min(1, "Please select a job category"),
-  locationType: z.string().min(1, "Please select a location type"),
-  salaryMin: z.string().regex(/^\d+$/, "Must be a valid number"),
-  salaryMax: z.string().regex(/^\d+$/, "Must be a valid number"),
-  employmentType: z.string().min(1, "Please select employment type"),
-  requiredSkills: z.string().min(5, "List at least one skill"),
-  requirements: z.string().min(10, "Requirements must be detailed"),
-  jobDescription: z.string().min(50, "Description must be at least 50 characters"),
-  applicationDeadline: z.date(),
-  numberOfOpenings: z.string().regex(/^\d+$/, "Must be a valid number").min(1, "At least 1 opening"),
-});
-
-type JobPostFormData = z.infer<typeof jobPostSchema>;
+import {
+  useCreateJobMutation,
+  useGetJobCategoriesQuery,
+} from "@/store/api/employerSlice/JobSlice";
+import { JobFormData, JobFormSchema } from "@/schema/employer/employer.schema";
 
 export default function JobPostForm() {
-  const form = useForm<JobPostFormData>({
-    resolver: zodResolver(jobPostSchema),
+  const [createJob, { isLoading: isSubmitting }] = useCreateJobMutation();
+  const { data: categories, isLoading: loadingCategories } =
+    useGetJobCategoriesQuery();
+  console.log("Job categories:", categories);
+  const form = useForm<JobFormData>({
+    resolver: zodResolver(JobFormSchema),
     defaultValues: {
-      jobTitle: "",
-      jobCategory: "",
-      locationType: "",
-      salaryMin: "",
-      salaryMax: "",
-      employmentType: "",
-      requiredSkills: "",
+      title: "",
+      category: "",
+      description: "",
       requirements: "",
-      jobDescription: "",
-      numberOfOpenings: "1",
+      employment_type: "full_time",
+      location: "",
+      is_remote: false,
+      salary_min: "",
+      salary_max: "",
+      skills_required: "",
+      deadline: "",
+      number_of_openings: "1",
+      status: "active",
     },
   });
 
-  const onSubmit = async (data: JobPostFormData) => {
-    await new Promise((resolve) => setTimeout(resolve, 1200));
-    toast.success("Job posted successfully!");
-    console.log("Job posted:", data);
-    form.reset();
+  const isRemote = form.watch("is_remote");
+
+  console.log(form.formState.errors);
+
+  const onSubmit = async (data: JobFormData) => {
+    try {
+      const payload = {
+        title: data.title,
+        category: data.category,
+        description: data.description,
+        requirements: data.requirements,
+        employment_type: data.employment_type,
+        location: data.location,
+        is_remote: data.is_remote,
+        salary_min: Number(data.salary_min),
+        salary_max: Number(data.salary_max),
+        skills_required: data.skills_required
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+        deadline: data.deadline,
+        number_of_openings: Number(data.number_of_openings),
+        status: data.status,
+      };
+
+      await createJob(payload).unwrap();
+      toast.success("Job posted successfully!");
+      form.reset();
+    } catch (err: any) {
+      toast.error(err?.data?.message || "Failed to post job");
+    }
+  };
+
+  const handleNumberKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if ([8, 9, 27, 46, 13].includes(e.keyCode)) return;
+    if (e.ctrlKey || e.metaKey) return;
+    if (!/[0-9]/.test(e.key)) e.preventDefault();
   };
 
   return (
     <div className="w-full min-h-screen p-4 md:p-6 lg:p-8">
       <div className="max-w-4xl mx-auto">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 bg-white px-4 md:px-6 lg:px-9 py-4 md:py-6 lg:py-9">
-            {/* Header */}
-            <h2 className="text-2xl font-bold text-gray-900">Job Details</h2>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="space-y-8 bg-white px-4 md:px-6 lg:px-9 py-4 md:py-6 lg:py-9"
+          >
+            <h2 className="text-2xl font-bold text-gray-900">Post a New Job</h2>
 
             {/* Job Title */}
             <FormField
               control={form.control}
-              name="jobTitle"
+              name="title"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="flex items-center gap-1">
                     Job Title <span className="text-red-500">*</span>
                   </FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. Senior Frontend Developer" className="h-12" {...field} />
+                    <Input
+                      placeholder="e.g. Senior Software Engineer"
+                      className="h-12"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            {/* Job Category & Location Type */}
+            {/* Category & Location Type */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
                 control={form.control}
-                name="jobCategory"
+                name="category"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="flex items-center gap-1">
                       Job Category <span className="text-red-500">*</span>
                     </FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      disabled={loadingCategories}
+                    >
                       <FormControl>
-                        <SelectTrigger className="h-12 w-full">
-                          <SelectValue placeholder="Select category" />
+                        <SelectTrigger className="min-h-12 w-full">
+                          <SelectValue
+                            placeholder={
+                              loadingCategories
+                                ? "Loading..."
+                                : "Select category"
+                            }
+                          />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="engineering">Engineering</SelectItem>
-                        <SelectItem value="design">Design</SelectItem>
-                        <SelectItem value="marketing">Marketing</SelectItem>
-                        <SelectItem value="sales">Sales</SelectItem>
-                        <SelectItem value="hr">HR</SelectItem>
+                        {categories?.results.map((cat) => (
+                          <SelectItem key={cat.id} value={cat.id}>
+                            {cat.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -118,22 +171,24 @@ export default function JobPostForm() {
 
               <FormField
                 control={form.control}
-                name="locationType"
+                name="is_remote"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="flex items-center gap-1">
                       Location Type <span className="text-red-500">*</span>
                     </FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select
+                      onValueChange={(val) => field.onChange(val === "true")}
+                      value={field.value ? "true" : "false"}
+                    >
                       <FormControl>
-                        <SelectTrigger className="h-12 w-full">
-                          <SelectValue placeholder="Remote, On-site, Hybrid" />
+                        <SelectTrigger className="min-h-12 w-full">
+                          <SelectValue placeholder="Select location type" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="remote">Remote</SelectItem>
-                        <SelectItem value="on-site">On-site</SelectItem>
-                        <SelectItem value="hybrid">Hybrid</SelectItem>
+                        <SelectItem value="false">On-site</SelectItem>
+                        <SelectItem value="true">Remote</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -142,55 +197,90 @@ export default function JobPostForm() {
               />
             </div>
 
-            {/* Salary Range & Employment Type */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Location (only if on-site) */}
+            {!isRemote && (
               <FormField
                 control={form.control}
-                name="salaryMin"
+                name="location"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="flex items-center gap-1">
-                      Salary Range <span className="text-red-500">*</span>
+                      Job Location <span className="text-red-500">*</span>
                     </FormLabel>
                     <FormControl>
-                      <div className="flex items-center gap-2">
-                        <Input
-                          type="text"
-                          placeholder="Min"
-                          className="h-12"
-                          {...field}
-                        />
-                        <span className="text-gray-500">—</span>
-                        <Input
-                          type="text"
-                          placeholder="Max"
-                          className="h-12"
-                          {...form.register("salaryMax")}
-                        />
-                      </div>
+                      <Input
+                        placeholder="e.g. San Francisco, CA"
+                        className="h-12"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+            )}
 
+            {/* Salary Range */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
                 control={form.control}
-                name="employmentType"
+                name="salary_min"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Minimum Salary (USD)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="text"
+                        placeholder="120000"
+                        className="h-12"
+                        {...field}
+                        onKeyDown={handleNumberKeyDown}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="salary_max"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Maximum Salary (USD)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="text"
+                        placeholder="160000"
+                        className="h-12"
+                        {...field}
+                        onKeyDown={handleNumberKeyDown}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Employment Type & Number of Openings */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="employment_type"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="flex items-center gap-1">
                       Employment Type <span className="text-red-500">*</span>
                     </FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
-                        <SelectTrigger className="h-12 w-full">
-                          <SelectValue placeholder="Full-time, Part-time, etc." />
+                        <SelectTrigger className="min-h-12 w-full">
+                          <SelectValue placeholder="Select type" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="full-time">Full-time</SelectItem>
-                        <SelectItem value="part-time">Part-time</SelectItem>
+                        <SelectItem value="full_time">Full-time</SelectItem>
+                        <SelectItem value="part_time">Part-time</SelectItem>
                         <SelectItem value="contract">Contract</SelectItem>
                         <SelectItem value="internship">Internship</SelectItem>
                       </SelectContent>
@@ -199,12 +289,112 @@ export default function JobPostForm() {
                   </FormItem>
                 )}
               />
+
+              <FormField
+                control={form.control}
+                name="number_of_openings"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-1">
+                      Number of Openings <span className="text-red-500">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="text"
+                        placeholder="3"
+                        className="h-12"
+                        {...field}
+                        onKeyDown={handleNumberKeyDown}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            {/* Deadline */}
+            <div className="flex w-full gap-3">
+              <div className="w-1/2">
+                <FormField
+                  control={form.control}
+                  name="deadline"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col w-full">
+                      <FormLabel className="flex items-center gap-1">
+                        Application Deadline{" "}
+                        <span className="text-red-500">*</span>
+                      </FormLabel>
+
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "h-12 w-full pl-3 text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              {field.value ? (
+                                format(new Date(field.value), "PPP")
+                              ) : (
+                                <span>Pick a date</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={
+                              field.value ? new Date(field.value) : undefined
+                            }
+                            onSelect={(date) =>
+                              field.onChange(
+                                date ? format(date, "yyyy-MM-dd") : ""
+                              )
+                            }
+                            disabled={(date) => date < new Date()}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="w-1/2">
+                <FormField
+                  control={form.control}
+                  name="location"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col w-full">
+                      <FormLabel className="flex items-center gap-1">
+                        Location <span className="text-red-500">*</span>
+                      </FormLabel>
+
+                      <Input
+                        placeholder="e.g. Dhaka, Remote"
+                        className="h-12 w-full"
+                        {...field}
+                      />
+
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
 
-            {/* Required Skills */}
+            {/* Skills */}
             <FormField
               control={form.control}
-              name="requiredSkills"
+              name="skills_required"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="flex items-center gap-1">
@@ -212,7 +402,7 @@ export default function JobPostForm() {
                   </FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="e.g. React, TypeScript, Node.js"
+                      placeholder="e.g. Python, Django, PostgreSQL"
                       className="h-12"
                       {...field}
                     />
@@ -246,7 +436,7 @@ export default function JobPostForm() {
             {/* Job Description */}
             <FormField
               control={form.control}
-              name="jobDescription"
+              name="description"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="flex items-center gap-1">
@@ -264,88 +454,21 @@ export default function JobPostForm() {
               )}
             />
 
-            {/* Application Deadline & Number of Openings */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField
-                control={form.control}
-                name="applicationDeadline"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel className="flex items-center gap-1">
-                      Application Deadline <span className="text-red-500">*</span>
-                    </FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "h-12 pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "PPP")
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          disabled={(date) => date < new Date()}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="numberOfOpenings"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="flex items-center gap-1">
-                      Number of Openings <span className="text-red-500">*</span>
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        type="text"
-                        placeholder="e.g. 3"
-                        className="h-12"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
             {/* Buttons */}
             <div className="flex justify-end gap-3 pt-6">
               <Button
                 type="button"
                 variant="outline"
-                className="border-pink-300 text-pink-600 hover:bg-pink-50"
                 onClick={() => form.reset()}
               >
                 Reset
               </Button>
               <Button
                 type="submit"
-                disabled={form.formState.isSubmitting}
+                disabled={isSubmitting}
                 className="bg-black hover:bg-gray-800 text-white px-8"
               >
-                {form.formState.isSubmitting ? "Publishing..." : "Publish Job"}
+                {isSubmitting ? "Publishing..." : "Publish Job"}
               </Button>
             </div>
           </form>

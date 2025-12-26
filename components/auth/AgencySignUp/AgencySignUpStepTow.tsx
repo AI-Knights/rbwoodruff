@@ -19,6 +19,7 @@ import { uploadToCloudinary } from "@/lib/upload_images/upload";
 
 
 interface AgencyStepTowTypes {
+  isLoading : boolean ;
   onBack: () => void;
   onSubmit: (data: AgencySignUpFinal) => void;
   defaultValues?: Partial<AgencyStep2>;
@@ -26,10 +27,12 @@ interface AgencyStepTowTypes {
 
 export default function AgencySignUpStepTow({
   onBack,
+  isLoading,
   onSubmit,
   defaultValues,
 }: AgencyStepTowTypes) {
   const [uploading, setUploading] = useState(false);
+  
 
   const form = useForm<AgencyStep2>({
     resolver: zodResolver(agencyStep2Schema),
@@ -203,7 +206,7 @@ export default function AgencySignUpStepTow({
               className="flex-1 bg-[#6A0DAD] hover:bg-[#5a0c9d] py-6 text-lg font-semibold"
               disabled={uploading}
             >
-              {uploading ? "Uploading..." : "Submit"}
+              {isLoading ? "Uploading..." : "Submit"}
             </Button>
           </div>
         </form>

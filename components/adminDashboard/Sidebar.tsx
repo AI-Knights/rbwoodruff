@@ -1,11 +1,5 @@
 "use client";
-import {
-  BarChart3,
-  Shield,
-  Sparkles,
-  Users,
-  X,
-} from "lucide-react";
+import { BarChart3, Briefcase, Building2, Receipt, Shield, Sparkles, Tags, Users, X } from "lucide-react";
 import { Button } from "../ui/button";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -31,21 +25,26 @@ const Sidebar = ({
       name: "Trainees",
       icon: BarChart3,
       path: "/dashboard/trainees",
-    },   
+    },
     {
       name: "Job Seekers",
-      icon: Sparkles,
+      icon: Briefcase,
       path: "/dashboard/job-seekers",
     },
     {
       name: "Manage Agency",
-      icon: Sparkles,
+      icon: Building2,
       path: "/dashboard/manage-agency",
     },
     {
       name: "Payment History",
-      icon: Sparkles,
+      icon: Receipt,
       path: "/dashboard/payment-history",
+    },
+    {
+      name: "Category",
+      icon: Tags,
+      path: "/dashboard/category",
     },
   ];
 
@@ -92,9 +91,9 @@ const Sidebar = ({
               <X className="h-5 w-5" />
             </Button>
           </div>
-            <div className="py-10">
-                <Logo/>
-            </div>
+          <div className="py-10">
+            <Logo />
+          </div>
 
           {/* Navigation */}
           <nav className="flex-1 overflow-y-auto p-4">

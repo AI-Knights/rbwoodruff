@@ -70,8 +70,7 @@ export interface AgencyData {
     agency_name: string;
     agency_id: string;
     address: string;
-    document_public_id: string;
-    document_url: string;
+    documents: {public_id: string; url: string }[];
 }
 
 export interface AgencyRegistration extends BaseRegistration {

@@ -1,6 +1,6 @@
 "use client";
 import { AgencySignUpFinal, AgencyStep1, AgencyStep2, agencySignUp } from "@/validation";
-import { redirect } from "next/navigation";
+import { redirect, useRouter } from "next/navigation";
 import React, { useState } from "react";
 import AgencySignUpStepTow from "./AgencySignUpStepTow";
 import AgencySignUpStepOne from "./AgencySignUpStepOne";
@@ -11,8 +11,8 @@ export default function AgencySignUp() {
   const [agencyDataSetpOne, setSetpOneData] = useState<AgencyStep1 | null>(
     null
   );
-
-  const [createUser] = useCreateAccountMutation()
+  const router = useRouter()
+  const [createUser, { isLoading }] = useCreateAccountMutation()
 
   const handleStep1 = (data: AgencyStep1) => {
     setSetpOneData(data);
@@ -38,14 +38,18 @@ export default function AgencySignUp() {
           agency_name: fullData.agency_name,
           agency_id: fullData.agency_id,
           address: fullData.address,
-          document_public_id : fullData.documents[0].document_public_id ,
-          document_url : fullData.documents[0].secure_url
+          documents: fullData.documents.map(doc => ({
+            public_id: doc.document_public_id,
+            url: doc.secure_url,
+          }))
         },
       }).unwrap();
 
+      router.push("/auth/verification")
+
     } catch (error) {
       console.error("Registration failed:", error);
-      alert("Error during registration");
+      // alert("Error during registration");
     }
   };
 
@@ -92,6 +96,7 @@ export default function AgencySignUp() {
       )}
       {step === 2 && (
         <AgencySignUpStepTow
+          isLoading={isLoading}
           onBack={handleBack}
           onSubmit={handleStep2}
         ></AgencySignUpStepTow>

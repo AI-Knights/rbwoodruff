@@ -32,7 +32,7 @@ const authSlice = api.injectEndpoints({
             }
         }),
 
-        sendOtp: builder.mutation<{}, { email: string }>({
+        sendOtp: builder.mutation<{ message: string }, { email: string }>({
             query: ({ email }) => ({
                 url: '/auth/send-otp/',
                 method: "POST",
@@ -41,7 +41,7 @@ const authSlice = api.injectEndpoints({
 
         }),
 
-        verifyEmail: builder.mutation<{message : string ; email : string}, { otp: string, email: string }>({
+        verifyEmail: builder.mutation<{ message: string; email: string }, { otp: string, email: string }>({
             query: ({ otp, email }) => ({
                 url: "/auth/verify-otp/",
                 method: "POST",
@@ -52,4 +52,4 @@ const authSlice = api.injectEndpoints({
 })
 
 
-export const { useCreateAccountMutation, useSignInUserMutation , useVerifyEmailMutation} = authSlice
+export const { useCreateAccountMutation, useSignInUserMutation, useVerifyEmailMutation, useSendOtpMutation } = authSlice
