@@ -7,16 +7,19 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface ConfirmationDialogProps {
   title: string;
   subtitle?: string;
   open: boolean;
+  action : string;
   setOpen: (open: boolean) => void;
 }
 
 function ConfirmationDialog({
   subtitle,
+  action,
   title,
   open,
   setOpen,
@@ -28,7 +31,7 @@ function ConfirmationDialog({
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
 
-        <div className="py-4 text-sm text-muted-foreground">{subtitle}</div>
+        <div className={cn("py-4 text-sm text-muted-foreground" , action === "Reject" ? "text-red-500" : "")}>{subtitle}</div>
 
         <DialogFooter className="gap-5 w-fit mx-auto flex flex-row  sm:gap-0">
           <Button className="mx-6" variant="outline" onClick={() => setOpen(false)}>

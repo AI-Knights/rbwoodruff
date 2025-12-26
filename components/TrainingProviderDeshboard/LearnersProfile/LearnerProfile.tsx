@@ -9,6 +9,8 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Eye, CheckCircle, Verified } from "lucide-react";
+import { LearnerEnrollment } from "@/types/trainer/trainer";
+import { cn } from "@/lib/utils";
 
 export interface Learner {
   name: string;
@@ -28,14 +30,14 @@ export default function LearnerProfile({
   data,
   action,
 }: {
-  data: Learner;
+  data: LearnerEnrollment;
   action: LearnProps;
 }) {
   return (
     <Dialog open={action.open} onOpenChange={action.setOpen}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Edit profile</DialogTitle>
+          <DialogTitle>Learner profile</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6 pt-4">
@@ -44,11 +46,11 @@ export default function LearnerProfile({
             <div className="flex flex-col gap-4">
               <div>
                 <p className="font-medium text-foreground">Name</p>
-                <p className="text-black font-semibold">{data.name}</p>
+                <p className="text-black font-semibold">{data.learner_name}</p>
               </div>
               <div>
                 <p className="font-medium text-foreground">Program</p>
-                <p className="text-black font-semibold">{data.program}</p>
+                <p className="text-black font-semibold">{data.program_name}</p>
               </div>
             </div>
 
@@ -57,20 +59,20 @@ export default function LearnerProfile({
                 <p className="font-medium text-foreground">Start Date</p>
                 <p className="text-black font-semibold flex items-center gap-1">
                   <Calendar className="h-3 w-3" />
-                  {data.startDate}
+                  {data.start_date}
                 </p>
               </div>
               <div>
                 <p className="font-medium text-foreground">End Date</p>
                 <p className="text-black font-semibold flex items-center gap-1">
                   <Calendar className="h-3 w-3" />
-                  {data.startDate}
+                  {data.completion_date ? data.completion_date : "Running"}
                 </p>
               </div>
             </div>
           </div>
 
-         
+
           <div className="flex items-center justify-between">
             <Badge
               variant="secondary"
@@ -80,9 +82,9 @@ export default function LearnerProfile({
               {data.status}
             </Badge>
 
-            {data.certificate && (
-              <Button variant="outline" size="sm" asChild>
-                <a href="#" target="_blank" rel="noopener">
+            {(
+              <Button disabled={data.has_certificate} className={cn("cursor-pointer" , data.has_certificate ? "bg-green-300" : "bg-gray-100")} variant="outline" size="sm" asChild>
+                <a href={data.resume_url} target="_blank" rel="noopener">
                   <Eye className="h-4 w-4 mr-1" />
                   View Certificate
                 </a>
@@ -109,7 +111,7 @@ export default function LearnerProfile({
               action.handleValue({ type: "Accept", open: true });
             }}
           >
-             <Verified></Verified>
+            <Verified></Verified>
             Verify
           </Button>
         </DialogFooter>

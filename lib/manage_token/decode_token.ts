@@ -9,7 +9,7 @@ interface DecodedToken {
     iat: number;
     jti: string;
     user_id: string;
-    user_type: string;           // This is what we use for routing
+    user_type: string;
     email: string;
     full_name: string;
     [key: string]: any;
@@ -33,42 +33,27 @@ export const getUserType = (token: string): string => {
     return decoded?.user_type || "unknown";
 };
 
-/**
- * Get dashboard route based on user_type from your app
- */
-export const getDashboardRoute = (token: string | undefined): string => {
-
-    if(token) {
-
-        const userType = getUserType(token).toLowerCase();
-        switch (userType) {
-            case "employer":
-                return "/employer-dashboard";
-    
-            case "training_provider":
-                return "/training-provider-dashboard";
-    
-            case "agency":
-                return "/agency-dashboard";
-    
-    
-    
-    
-    
-            default:
-                return "/dashboard";
-        }
+export const getDashboardRoute = (token: string): string => {
+    if (!token) {
+        return '#'
     }
 
-    return "#"
 
+
+    const userType = getUserType(token).toLowerCase();
+    switch (userType) {
+        case "employer":
+            return "/employer-dashboard";
+
+        case "training_provider":
+            return "/training-provider-dashboard";
+
+        case "agency":
+            return "/agency-dashboard";
+
+
+        default:
+            return "/admin-dashboard";
+    }
 };
 
-/**
- * Optional: Check if token is expired
- */
-// export const isTokenExpired = (token: string): boolean => {
-//   const decoded = decodeToken(token);
-//   if (!decoded?.exp) return true;
-//   return Date.now() >= decoded.exp * 1000;
-// };

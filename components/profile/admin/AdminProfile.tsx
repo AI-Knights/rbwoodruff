@@ -16,8 +16,9 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Label } from "@/components/ui/label";
 import { Camera, Upload } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useGetProfileInfoQuery, useUpdateProfileMutation } from "@/store/api/authSlice/authSlice";
 
 // Zod schema
 const profileSchema = z.object({
@@ -31,22 +32,39 @@ const profileSchema = z.object({
 type ProfileFormData = z.infer<typeof profileSchema>;
 
 export default function AdminProfile() {
-  const [image, setImage] = useState<string | null>(null);
-
+  const [image, setImage] = useState<string | undefined>(undefined);
+  const { data } = useGetProfileInfoQuery()
+  const [updateProfile] = useUpdateProfileMutation()
+  console.log(data)
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      name: "Rbwoodruf",
-      email: "woodruf@mail.com",
+      name: "",
+      email: "",
     },
   });
 
+  useEffect(() => {
+    if (data) {
+      form.reset({
+        name: data.full_name,
+        email: data.email,
+      });
+    }
+  }, [data, form]);
   const onSubmit = async (data: ProfileFormData) => {
     // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    toast.success("Profile updated successfully!");
+
     console.log("Profile saved:", { ...data, image });
+    try {
+      const response = await updateProfile({ profile_pic: image, full_name: data.name })
+      toast.success(`${response.data?.full_name} updated`)
+    } catch (e) {
+      const error = e as Error
+      toast.error(error.message)
+    }
   };
+  // console.log(image)
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -54,14 +72,18 @@ export default function AdminProfile() {
       const reader = new FileReader();
       reader.onloadend = () => {
         setImage(reader.result as string);
-        toast.success("Profile photo updated!");
+
+        // toast.success("Profile photo updated!");
       };
       reader.readAsDataURL(file);
     }
   };
 
+  console.log(image)
+
   return (
     <div className="w-full min-h-screen bg-white p-4 md:p-6 lg:p-8">
+
       <div className="max-w-7xl mx-auto">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-10">
@@ -69,7 +91,11 @@ export default function AdminProfile() {
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
               <div className="relative group">
                 <Avatar className="w-20 h-20 ring-2 ring-gray-200">
-                  <AvatarImage src={image || undefined} alt="Profile photo" />
+                  <AvatarImage
+                    src={image ?? data?.profile_pic ?? undefined}
+                    alt="Profile photo"
+                  />
+
                   <AvatarFallback className="bg-gray-100 text-2xl font-medium text-gray-700">
                     R
                   </AvatarFallback>
@@ -130,6 +156,7 @@ export default function AdminProfile() {
               <FormField
                 control={form.control}
                 name="email"
+                disabled={true}
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-base font-medium">Email</FormLabel>

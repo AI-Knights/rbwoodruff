@@ -3,15 +3,10 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ProgramLearnerSummary } from '@/types/trainer/trainer';
 
-const data = [
-  { program: 'Logistics', learners: 50 },
-  { program: 'Healthcare', learners: 35 },
-  { program: 'IT', learners: 30 },
-  { program: 'Digital', learners: 20 },
-  { program: 'Construction', learners: 40 },
-];
-export default function LearnerLineChart() {
+
+export default function LearnerLineChart({info} : {info : ProgramLearnerSummary[] }) {
   return (
     <div>
         <div className=" p-4 md:p-8">
@@ -25,12 +20,12 @@ export default function LearnerLineChart() {
               <div className="h-96 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
-                    data={data}
+                    data={info}
                     margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200" />
                     <XAxis 
-                      dataKey="program" 
+                      dataKey="program_name" 
                       tick={{ fill: '#374151' }}
                       tickLine={{ stroke: '#9CA3AF' }}
                     />
@@ -54,10 +49,10 @@ export default function LearnerLineChart() {
                       iconType="rect"
                     />
                     <Bar 
-                      dataKey="learners" 
+                      dataKey="total_learners" 
                       fill="#8B5CF6" 
                       radius={[0, 0, 0, 0]}
-                      name="Learners"
+                      name="total_learners"
                     />
                   </BarChart>
                 </ResponsiveContainer>

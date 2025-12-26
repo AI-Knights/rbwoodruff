@@ -7,6 +7,9 @@ import TrainerSecond from "./TrainerStep2";
 import { useDispatch } from "react-redux";
 import { useCreateAccountMutation } from "@/store/api/authSlice/authSlice";
 import { setEmail } from "@/store/api/authSlice/emailSlice/emailSlice";
+import { ErrorResponse } from "@/types/error/error";
+import { getErrorMessage } from "@/lib/globalError/error";
+import { toast } from "sonner";
 
 export default function TrainerSignUp() {
   const dispatch = useDispatch()
@@ -32,14 +35,14 @@ export default function TrainerSignUp() {
       return;
     }
 
-    dispatch(setEmail(result.data.email))
+    dispatch(setEmail({ email: result.data.email, route: "trainer" }))
 
     try {
       const skillsArray = Array.isArray(result.data.skills)
         ? result.data.skills
         : result.data.skills.split(",").map(s => s.trim());
 
-      await createUser({
+      const res = await createUser({
         email: result.data.email,
         full_name: result.data.full_name,
         password: result.data.password,
@@ -51,11 +54,14 @@ export default function TrainerSignUp() {
           bio: result.data.bio,
         },
       }).unwrap();
+      toast.message(res.message)
 
       router.push("/auth/verification");
     } catch (err: unknown) {
+      const error = err as { data: ErrorResponse }
+      toast.error(getErrorMessage(error.data))
       if (err instanceof Error) {
-        setApiError(err?.message || "Something went wrong");
+        setApiError(getErrorMessage(error.data) || "Something went wrong");
 
       }
     }

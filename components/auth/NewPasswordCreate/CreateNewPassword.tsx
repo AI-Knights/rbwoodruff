@@ -2,8 +2,6 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import Company from "@/assets/company.svg";
-import Loaction from "@/assets/loaction.svg";
 import Lock from "@/assets/lock.svg";
 import Email from "@/assets/email.svg";
 import { email, z } from "zod";
@@ -21,9 +19,15 @@ import {
 import { Input } from "@/components/ui/input";
 import Image from "next/image";
 import { createNewPassworSchema } from "@/validation";
-import { redirect } from "next/navigation";
+import { redirect, useRouter } from "next/navigation";
+import { clearToken, getToken } from "@/lib/manage_token";
+import { toast } from "sonner";
+import { useConfirmPasswordMutation } from "@/store/api/authSlice/authSlice";
+import { ErrorResponse } from "@/types/error/error";
+import { getErrorMessage } from "@/lib/globalError/error";
 
 export default function CreateNewPassword() {
+  const [confirmPasswordApi] = useConfirmPasswordMutation()
   const form = useForm<z.infer<typeof createNewPassworSchema>>({
     resolver: zodResolver(createNewPassworSchema),
     defaultValues: {
@@ -32,11 +36,32 @@ export default function CreateNewPassword() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof createNewPassworSchema>) {
-    console.log(values);
-    redirect('/auth/welcome')
-   
-  }
+  const router = useRouter()
+
+  const onSubmit = async (values: z.infer<typeof createNewPassworSchema>) => {
+    try {
+      // Get reset token from cookies
+      const reset_token = getToken({ token_name: "reset_token" });
+      if (!reset_token) {
+        toast.error("Reset token not found. Please try again.");
+        return;
+      }
+
+      // Call confirm password API
+      const response = await confirmPasswordApi({
+        reset_token,
+        new_password: values.new_password,
+      }).unwrap();
+
+      toast.success(response.message);
+      clearToken({ tokenName: "reset_token" })
+      router.push("/auth/sign-in");
+    } catch (err) {
+      const error = err as { data: { error: string } }
+      toast.error(error.data.error || "Failed to reset password");
+      console.error(err);
+    }
+  };
   return (
     <div className="flex flex-col justify-center items-center w-full">
       <div className="border px-10 py-12 rounded-2xl mx-auto max-w-3xl w-full md:m-4 flex flex-col gap-4">
