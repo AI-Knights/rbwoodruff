@@ -1,47 +1,32 @@
 "use client";
-import { usePathname } from "next/navigation";
-import { Bell, CircleCheck, Info, Menu } from "lucide-react";
+import {Menu } from "lucide-react";
 import { Button } from "../ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import Link from "next/link";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "../ui/dropdown-menu";
+
+import { decodeToken } from "@/lib/manage_token/decode_token";
+import { getToken } from "@/lib/manage_token";
 
 const Navbar = ({ onMenuClick }: { onMenuClick?: () => void }) => {
-  const pathname = usePathname();
+  const token = getToken({ token_name: "access_token" });
+  const user = decodeToken(token || "");
 
-  // Split the path
-  const parts = pathname.split("/").filter(Boolean);
 
-  // Define titles for specific routes
-  const getPageTitle = (path: string) => {
-    const routes: { [key: string]: string } = {
-      dashboard: "Admin Overview",
-      "student-management": "Management Student",
-      moderation: "Moderation",
-      "manage-module": "Manage Module",
-      profile: "Profile",
-      "manage-question": "Manage Question",
-      "quiz-configuration": "Quiz Configuration",
-      "profile-admin": "Admin Profile",
-      "profile-employer": "Employer Profile",
-      security: "Security"
-    };
+  const getPageTitle = (role: string | undefined): string => {
+    switch (role) {
+      case "admin":
+        return "Administrator Dashboard";
 
-    // Check if we're on a nested route under manage-question
-    if (pathname.startsWith("/dashboard/manage-question")) {
-      return "Manage Question";
+      case "training_provider":
+        return "Training Provider";
+
+      case "employer":
+        return "Employer Dashboard";
+
+      case "agency":
+        return "Agency Management";
+
+      default:
+        return "Dashboard";
     }
-
-    // last part of the path (eg. "profile")
-    const last = parts[parts.length - 1];
-    return routes[last] || "Dashboard";
   };
 
   return (
@@ -65,8 +50,8 @@ const Navbar = ({ onMenuClick }: { onMenuClick?: () => void }) => {
           {/* Mobile Menu Button - Only visible on mobile/tablet */}
 
           <h1 className="text-lg md:text-3xl font-semibold text-gray-800">
-            {getPageTitle(pathname)}
-          </h1>          
+            {getPageTitle(user?.user_type)}
+          </h1>
         </div>
       </div>
     </nav>

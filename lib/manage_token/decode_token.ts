@@ -53,7 +53,7 @@ export const getDashboardRoute = (token: string): string => {
 
 
         default:
-            return "/admin-dashboard";
+            return "/dashboard";
     }
 };
 

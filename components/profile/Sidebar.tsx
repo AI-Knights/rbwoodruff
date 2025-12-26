@@ -26,19 +26,19 @@ const Sidebar = ({
   const pathname = usePathname();
   const router = useRouter()
   const routes = [
-    { name: "Profile", icon: User, path: "/profile-admin" },
+    { name: "Profile", icon: User, path: "/profile" },
     {
       name: "Security",
       icon: Shield,
-      path: "/profile-admin/security",
+      path: "/profile/security",
     },
   ];
 
   // Helper function to check if route is active
   const isRouteActive = (routePath: string) => {
     // Exact match for dashboard overview
-    if (routePath === "/profile-admin") {
-      return pathname === "/profile-admin";
+    if (routePath === "/profile") {
+      return pathname === "/profile";
     }
     // For other routes, check if pathname starts with the route path
     return pathname.startsWith(routePath);

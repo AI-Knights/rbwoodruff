@@ -78,7 +78,7 @@ export default function TraingProvider({
           Training Provider Portal
         </p>
         <div className="h-14 w-14 rounded-full">
-          <Link href={'/profile-employer'} >
+          <Link href={"/profile"}>
             <Image
               src={CatImage}
               className="w-full rounded-full h-full"

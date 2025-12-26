@@ -105,8 +105,8 @@ const Navbar = ({ onMenuClick }: { onMenuClick?: () => void }) => {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <Link href={"/profile-admin"}>
-            <Avatar className="size-16 border-2">
+          <Link href={"/profile"}>
+            <Avatar className="size-16 border-2">b
               <AvatarImage
                 src={
                   "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop"

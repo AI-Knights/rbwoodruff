@@ -59,7 +59,7 @@ const Navbar = ({ onMenuClick }: { onMenuClick?: () => void }) => {
           </h1>
         </div>
         <div className="flex items-center justify-center gap-4">          
-          <Link href={"/profile-employer"}>
+          <Link href={"/profile"}>
             <Avatar className="size-16 border-2">
               <AvatarImage
                 src={
