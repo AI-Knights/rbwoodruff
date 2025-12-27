@@ -34,3 +34,27 @@ export interface PaginatedCategoryResponse {
   previous: string | null;
   results: Category[];
 }
+
+
+export interface ApplicantForJob {
+    id: string;
+    job: string;
+    job_title: string;
+    job_category: string;
+    job_location: string;
+    applicant: string;
+    applicant_name: string;
+    applicant_email: string;
+    status: 'pending' | 'reviewed' | 'interviewed' | 'hired' | 'rejected';
+    cover_letter: string;
+    applied_at: string; 
+    employer_notes: string;
+    resume_completeness: number; 
+    resume_pdf_url: string | null;
+}
+export interface ApplicantsForJobResponse {
+    count: number;
+    next: string | null;
+    previous: string | null;
+    results: ApplicantForJob[];
+}

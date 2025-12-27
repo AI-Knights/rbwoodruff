@@ -86,9 +86,18 @@ const authSlice = api.injectEndpoints({
                 method: "PATCH",
                 body: { ...info }
             })
-        })
+        }),
+
+        changePassword: builder.mutation<{ message: string }, { old_password: string; new_password: string }>({
+            query: (passwords) => ({
+                url: "/auth/change-password/",  
+                method: "POST",
+                body: passwords
+            })
+        }),
+
     })
 })
 
 
-export const { useCreateAccountMutation, useUpdateProfileMutation, useConfirmPasswordMutation, useSignInUserMutation, useVerifyResetOtpMutation, useVerifyEmailMutation, useSendOtpMutation, useForgotPasswordMutation, useGetProfileInfoQuery } = authSlice
+export const { useCreateAccountMutation, useUpdateProfileMutation, useConfirmPasswordMutation, useChangePasswordMutation, useSignInUserMutation, useVerifyResetOtpMutation, useVerifyEmailMutation, useSendOtpMutation, useForgotPasswordMutation, useGetProfileInfoQuery } = authSlice

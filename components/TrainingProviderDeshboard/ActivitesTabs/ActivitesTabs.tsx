@@ -33,10 +33,10 @@ export default function ActivitesTabs() {
 
   return (
     <div>
-      <div className="w-full p-6">
+      <div className="w-full ">
         <div className=" w-full">
           <Tabs className="w-full " defaultValue="learner_overview">
-            <div className="flex flex-col lg:flex-row justify-between px-4 py-1 lg:rounded-full w-full bg-gray-200">
+            <div className="flex  flex-row justify-between md:px-4 py-1 w-1/2 mx-auto rounded-full md:w-full  bg-gray-200">
               {tablist.map((data, index) => (
                 <TabsList className="bg-transparent" key={index}>
                   <TabsTrigger
@@ -45,7 +45,7 @@ export default function ActivitesTabs() {
                   >
                     <div className="flex text-xl items-center flex-row gap-2">
                       {data.icon}
-                      <p>{data.name}</p>
+                      <p className="md:text-xs lg:text-lg hidden md:block">{data.name}</p>
                     </div>
                   </TabsTrigger>
                 </TabsList>

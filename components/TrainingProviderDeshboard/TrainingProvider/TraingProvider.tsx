@@ -13,6 +13,8 @@ import { Bell, Info, CircleCheck } from "lucide-react";
 import { IoMdCheckmarkCircleOutline } from "react-icons/io";
 import { CiWarning } from "react-icons/ci";
 import { useTrainerOverviewQuery } from "@/store/api/trainerSlice/trainerSlice";
+import { Nav } from "react-day-picker";
+import Navbar from "@/components/adminDashboard/Navbar";
 
 
 
@@ -64,7 +66,7 @@ export default function TraingProvider({
   console.log(data)
   return (
     <div className="bg-[#F4F4F4]">
-      <div className="flex flex-row bg-white shadow  px-8 py-4 justify-between items-center">
+      {/* <div className="flex flex-row bg-white shadow  px-8 py-4 justify-between items-center">
         <Link className=" " href={"/training-provider-dashboard"}>
           <Image
             src={LogoImage}
@@ -88,15 +90,18 @@ export default function TraingProvider({
             />
           </Link>
         </div>
-      </div>
-      <div className=" h-fit   grid grid-cols-1 md:grid-cols-12 gap-3 px-8">
+      </div> */}
+      <Navbar />
+      <div className=" h-fit   2xl:grid grid-cols-1 md:grid-cols-12 gap-3 ">
         <div className="  col-span-10 ">
           <ActivitesCard data={activies}></ActivitesCard>
 
-          {children}
+          <div className="px-4">
+            {children}
+          </div>
         </div>
 
-        <div className="w-full  bg-white h-full col-span-2 p-6 shadow-lg border border-gray-200 ">
+        <div className="w-full 2xl:block hidden  bg-white h-full col-span-2 p-6 shadow-lg border border-gray-200 ">
           <div className="w-full  bg-white h-fit p-5 rounded-xl shadow-lg border border-gray-200">
             <div className="px-4 py-3  border-gray-200 flex items-center gap-3">
               <Bell className="size-6" fill="black" />

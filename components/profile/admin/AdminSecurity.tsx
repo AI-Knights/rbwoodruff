@@ -17,6 +17,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useChangePasswordMutation, useGetProfileInfoQuery } from "@/store/api/authSlice/authSlice";
 
 // Zod schema
 const passwordSchema = z
@@ -38,9 +39,13 @@ const passwordSchema = z
 type PasswordFormData = z.infer<typeof passwordSchema>;
 
 export default function AdminSecurity() {
+  const {data} = useGetProfileInfoQuery()
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+
+  const [changePassword] = useChangePasswordMutation()
+
 
   const form = useForm<PasswordFormData>({
     resolver: zodResolver(passwordSchema),
@@ -52,10 +57,17 @@ export default function AdminSecurity() {
   });
 
   const onSubmit = async (data: PasswordFormData) => {
-    await new Promise((resolve) => setTimeout(resolve, 1200));
-    toast.success("Password updated successfully!");
-    form.reset();
-  };
+
+    try {
+      const res = await changePassword({ old_password: data.currentPassword, new_password: data.newPassword }).unwrap();
+      toast.success(res.message);
+      form.reset();
+
+    } catch (e) {
+      const error = e as { data: { old_password: string[] } };
+      toast.error(error.data.old_password[0]);
+    }
+  }
 
   return (
     <div className="w-full min-h-screen bg-white p-4 md:p-6 lg:p-8">
@@ -66,7 +78,7 @@ export default function AdminSecurity() {
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
               <Avatar className="w-20 h-20 ring-2 ring-gray-200">
                 <AvatarImage
-                  src="https://api.dicebear.com/7.x/avataaars/svg?seed=admin"
+                  src={data?.profile_pic ? data.profile_pic : "https://api.dicebear.com/7.x/avataaars/svg?seed=admin"}
                   alt="Admin"
                 />
                 <AvatarFallback className="bg-gray-100 text-2xl font-medium text-gray-700">

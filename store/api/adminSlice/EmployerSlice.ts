@@ -1,6 +1,7 @@
 
 import { EmployersResponse, VerifyEmployerResponse } from '@/types/admin/employer.type';
 import { api } from '../ApiSlice';
+import { ApplicantsForJobResponse } from '@/types/employer/employer.type';
 
 export const employerApi = api.injectEndpoints({
   endpoints: (builder) => ({
@@ -21,8 +22,16 @@ export const employerApi = api.injectEndpoints({
       }),
       invalidatesTags: ["Employer"]
     }),
+
+    // get applicants for a specific job post
+    getJobApplicants: builder.query<ApplicantsForJobResponse,{jobId: string}>({
+      query: ({jobId}) => ({
+        url: `/employer/jobs/${jobId}/applicants/`,
+      }),
+      providesTags: ["Employer"]
+    }),
   }),
 });
 
 // Export hooks (unique names)
-export const { useGetEmployersQuery, useUpdateEmployerStatusMutation } = employerApi;
+export const { useGetEmployersQuery, useUpdateEmployerStatusMutation , useGetJobApplicantsQuery } = employerApi;

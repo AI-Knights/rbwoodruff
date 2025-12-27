@@ -15,14 +15,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ApplicantForJob } from "@/types/employer/employer.type";
 
 interface Props {
-  applicant: Applicant;
+  applicant: ApplicantForJob;
 }
 
 export function ApplicantCard({ applicant }: Props) {
+  const skills = ["JavaScript", "React", "Node.js"];
   const avatarSrc =
-    applicant.avatarUrl ??
+    applicant.resume_pdf_url ??
     `https://api.dicebear.com/7.x/avataaars/svg?seed=${applicant.id}`;
   const [open, setOpen] = useState<boolean>(false);
   return (
@@ -47,32 +49,32 @@ export function ApplicantCard({ applicant }: Props) {
             </SelectContent>
           </Select>
           <div className="text-end">
-          <Button className="w-fit" onClick={() => setOpen(false)}>Done</Button>
+            <Button className="w-fit" onClick={() => setOpen(false)}>Done</Button>
 
           </div>
         </DialogContent>
       </Dialog>
       <Avatar className="h-12 w-12">
-        <AvatarImage src={avatarSrc} alt={applicant.name} />
-        <AvatarFallback>{applicant.name.charAt(0)}</AvatarFallback>
+        <AvatarImage src={avatarSrc} alt={applicant.applicant_name} />
+        <AvatarFallback>{applicant.applicant_name.charAt(0)}</AvatarFallback>
       </Avatar>
 
       <div className="flex-1 space-y-1">
-        <h3 className="font-medium">{applicant.name}</h3>
+        <h3 className="font-medium">{applicant.applicant_name}</h3>
         <p className="text-sm text-muted-foreground">
-          {applicant.email} {applicant.phone}
+          {applicant.applicant_email}
         </p>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <span className="flex items-center gap-1">
-            <Calendar className="size-5"/> {applicant.experience}
+            <Calendar className="size-5" /> {applicant.applied_at}
           </span>
           <span className="flex items-center gap-1">
-            <GraduationCap className="size-5"/> {applicant.certification}
+            <GraduationCap className="size-5" /> {applicant.job}
           </span>
         </div>
 
         <div className="flex flex-wrap gap-1 mt-2">
-          {applicant.skills.map((skill) => (
+          {skills.map((skill) => (
             <Badge key={skill} variant="secondary">
               {skill}
             </Badge>
@@ -82,11 +84,11 @@ export function ApplicantCard({ applicant }: Props) {
 
       <div className="xl:flex md:flex-col lg:flex-row hidden gap-2 mt-3 sm:mt-0">
         <Button variant="outline" size="sm">
-          <Download className="h-4 w-4 mr-1" />
+          <Download href={applicant.resume_pdf_url ? applicant.resume_pdf_url : "#"} className="h-4 w-4 mr-1" />
           View Resume as PDF
         </Button>
         <Button variant="outline" size="sm">
-          <Download className="h-4 w-4 mr-1" />
+          <Download  className="h-4 w-4 mr-1" />
           View Certificate
         </Button>
         <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
