@@ -1,14 +1,15 @@
-import { PaymentsResponse } from "@/types/admin/payment.type";
+import type { PaymentsResponse } from "@/types/admin/payment.type";
 import { api } from "../ApiSlice";
 
-
-export const paymentApi = api.injectEndpoints({
+export const paymentApiSlice = api.injectEndpoints({
   endpoints: (builder) => ({
     getPayments: builder.query<PaymentsResponse, void>({
-      query: () => '/admin-panel/payments/',
-      providesTags: ["Payment"]
+      query: () => ({
+        url: "/admin-panel/payments/",
+      }),
+      providesTags: ["Payment"],
     }),
   }),
 });
 
-export const { useGetPaymentsQuery } = paymentApi;
+export const { useGetPaymentsQuery } = paymentApiSlice;

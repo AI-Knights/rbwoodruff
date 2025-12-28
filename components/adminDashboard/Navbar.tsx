@@ -52,7 +52,9 @@ const Navbar = ({ onMenuClick }: { onMenuClick?: () => void }) => {
   return (
     <nav className="bg-white lg:px-6 sticky top-0 z-30">
       <div className="flex items-center justify-between h-20 px-4 lg:px-0">
-        <Logo />
+        <div className="hidden lg:block" >
+          <Logo />
+        </div>
         {/* Left side - Menu button and title */}
         <div className="flex lg:hidden items-center gap-2 ">
           {onMenuClick && (
