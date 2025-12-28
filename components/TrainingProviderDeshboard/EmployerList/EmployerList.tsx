@@ -14,6 +14,8 @@ import { cn } from "@/lib/utils";
 import { useState } from "react";
 import EmployerDetailDialog from "./EmployerDetailDialog";
 import { tr } from "date-fns/locale";
+import { useEmployerLinkagesQuery } from "@/store/api/trainerSlice/trainerSlice";
+import { Job } from "@/types/trainer/trainer";
 
 interface Employer {
   id: string;
@@ -86,16 +88,9 @@ const employers: Employer[] = [
 
 
 export default function EmployerList() {
+  const { data } = useEmployerLinkagesQuery()
   const [modal, setModal] = useState<boolean>(false)
-  const [selectedIndex, setSelectedIndex] = useState<Employer>({
-    id: "",
-    name: "",
-    trainingProgram: "",
-    roleHiring: "",
-    salaryRange: "",
-    activeListings: 0,
-    status: "verified"
-  })
+  const [selectedIndex, setSelectedIndex] = useState<Job | string>("")
   return (
     <div className="w-full space-y-4">
       {/* Search Bar */}
@@ -113,50 +108,37 @@ export default function EmployerList() {
         <Table>
           <TableHeader>
             <TableRow>
-               <TableHead  className=" font-bold">Employer Name</TableHead>
-               <TableHead  className=" font-bold">Training Program</TableHead>
-               <TableHead  className=" font-bold">Roles Hiring</TableHead>
-               <TableHead  className=" font-bold">Avg Salary Range</TableHead>
-               <TableHead  className=" font-bold">Active Listings</TableHead>
-               <TableHead  className=" font-bold">Status</TableHead>
-              <TableHead className="text-center font-bold">Actions</TableHead>
+              <TableHead className=" font-bold">Employer Name</TableHead>
+              <TableHead className=" font-bold">Training Program</TableHead>
+              <TableHead className=" font-bold">Roles Hiring</TableHead>
+              <TableHead className=" font-bold">Avg Salary Range</TableHead>
+              <TableHead className=" font-bold">Active Listings</TableHead>
+              <TableHead className=" font-bold">Status</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {employers.map((employer) => (
-              <TableRow key={employer.id}>
-                <TableCell className="font-medium">{employer.name}</TableCell>
-                <TableCell>{employer.trainingProgram}</TableCell>
-                <TableCell>{employer.roleHiring}</TableCell>
+            {data?.jobs.map((employer) => (
+              <TableRow key={employer.job_id}>
+                <TableCell className="font-medium">{employer.employer_name}</TableCell>
+                <TableCell>{employer.job_category}</TableCell>
+                <TableCell>{employer.employment_type}</TableCell>
                 <TableCell className="text-green-600 font-medium">
-                  {employer.salaryRange}
+                  ${employer.salary_min}K - ${employer.salary_max}K
                 </TableCell>
-                <TableCell>{employer.activeListings} open</TableCell>
+                <TableCell>{employer.number_of_openings} open</TableCell>
                 <TableCell>
-                  <Badge className={cn('px-3 text-black py-1 rounded', employer.status === "verified" && "bg-green-100 border border-green-200", employer.status === "not-available" && "bg-[#F1E8CC] border border-[#fcd971]", employer.status === "pending" && "bg-[#FFEEEF] border border-[#fd9098]")}>
+                  <Badge className={cn('px-3 text-black  py-1 rounded', employer.status === "active" && "bg-green-100 border border-green-200", employer.status === "not-available" && "bg-[#F1E8CC] border border-[#fcd971]", employer.status === "pending" && "bg-[#FFEEEF] border border-[#fd9098]")}>
                     {/* {getStatusText(employer.status)} */}
                     {employer.status}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-center">
-                  <Button onClick={() => {
-                    setSelectedIndex(employer);
-                    setModal(true)
-                  }} className=" " variant="ghost" size="icon">
-                    <div className="flex flex-row gap-2 p-2 items-center justify-center border rounded" >
-                      <Eye className="w-4 h-4" />
-                      <div>
-                        view
-                      </div>
-                    </div>
-                  </Button>
-                </TableCell>
+              
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </div>
-      <EmployerDetailDialog onSet={setModal} showModal={modal} employer={selectedIndex} ></EmployerDetailDialog>
+      {/* <EmployerDetailDialog onSet={setModal} showModal={modal} employer={selectedIndex} ></EmployerDetailDialog> */}
     </div>
   );
 }

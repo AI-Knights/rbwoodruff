@@ -148,3 +148,31 @@ export interface User {
   profile_data: TrainingProviderProfile;
 }
 
+
+// types/job.ts
+export interface Job {
+  job_id: string;
+  employer_name: string;
+  employer_id: string;
+  employer_location: string;
+  employer_industry: string;
+  job_title: string;
+  job_category: string;
+  employment_type: string;
+  location: string;
+  is_remote: boolean;
+  salary_min: string;
+  salary_max: string;
+  salary_range: string;
+  number_of_openings: number;
+  skills_required: string[];
+  deadline: string;
+  status: string;
+  posted_date: string;
+}
+
+export interface JobsResponse {
+  count: number;
+  jobs: Job[];
+}
+

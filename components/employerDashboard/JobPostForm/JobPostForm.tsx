@@ -88,8 +88,9 @@ export default function JobPostForm() {
       await createJob(payload).unwrap();
       toast.success("Job posted successfully!");
       form.reset();
-    } catch (err: any) {
-      toast.error(err?.data?.message || "Failed to post job");
+    } catch (err) {
+      const error = err as { data?: { detail?: string } };
+      toast.error(error?.data?.detail || "Failed to post job");
     }
   };
 

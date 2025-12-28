@@ -8,15 +8,10 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Briefcase, DollarSign, User, Clock, CheckCircle } from "lucide-react";
+import { Job } from "@/types/trainer/trainer";
 
 interface EmployerDetailDialogProps {
-    employer: {
-        name: string;
-        trainingProgram: string;
-        salaryRange: string;
-        activeListings: number;
-        status: "verified" | "pending" | "not-available";
-    };
+    employer: Job ;
     onSet: (value: boolean) => void;
     showModal: boolean
 }
@@ -48,7 +43,7 @@ export default function EmployerDetailDialog({
                                 </div>
                                 <div>
                                     <p className="text-sm text-gray-500">Employer Name</p>
-                                    <p className="text-lg font-medium">{employer.name}</p>
+                                    <p className="text-lg font-medium">{employer.employer_name}</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-3">
@@ -58,7 +53,7 @@ export default function EmployerDetailDialog({
                                 <div>
                                     <p className="text-sm text-gray-500">Average Salary Range</p>
                                     <p className="text-lg font-semibold text-green-600">
-                                        {employer.salaryRange}
+                                        {employer.salary_min}k - {employer.salary_max} k
                                     </p>
                                 </div>
                             </div>
@@ -72,7 +67,7 @@ export default function EmployerDetailDialog({
                                 </div>
                                 <div>
                                     <p className="text-sm text-gray-500">Training Programs</p>
-                                    <p className="text-lg font-medium">{employer.trainingProgram}</p>
+                                    <p className="text-lg font-medium">{employer.job_title}</p>
                                 </div>
                             </div>
 
@@ -83,7 +78,7 @@ export default function EmployerDetailDialog({
                                 <div>
                                     <p className="text-sm text-gray-500">Active Job Listings</p>
                                     <p className="text-lg font-semibold">
-                                        {employer.activeListings} open
+                                        {employer.number_of_openings} open
                                     </p>
                                 </div>
                             </div>

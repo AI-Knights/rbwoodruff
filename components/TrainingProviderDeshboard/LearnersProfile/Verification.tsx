@@ -10,8 +10,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
-import { Verified } from "lucide-react";
 export default function Verification() {
   return (
     <div>

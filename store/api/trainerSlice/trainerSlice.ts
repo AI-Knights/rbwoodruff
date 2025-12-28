@@ -1,4 +1,4 @@
-import { CategoryListResponse, CourseListResponse, CreateTrainingRequest, DashboardStatsResponse, ITrainer, LearnerEnrollmentListResponse, TrainingProgram } from "@/types/trainer/trainer";
+import { CategoryListResponse, CourseListResponse, CreateTrainingRequest, DashboardStatsResponse, ITrainer, JobsResponse, LearnerEnrollmentListResponse, TrainingProgram } from "@/types/trainer/trainer";
 import { api } from "../ApiSlice";
 
 
@@ -10,7 +10,8 @@ const trainerSlice = api.injectEndpoints({
             query: () => ({
                 url: '/trainer/dashboard/',
 
-            })
+            }),
+            providesTags: ["Trainings"]
 
         }),
 
@@ -18,7 +19,8 @@ const trainerSlice = api.injectEndpoints({
             query: () => ({
                 url: "/trainer/analytics/",
 
-            })
+            }),
+            providesTags: ["Trainings"]
         }),
 
 
@@ -28,7 +30,8 @@ const trainerSlice = api.injectEndpoints({
             query: () => ({
                 url: '/trainer/programs/',
 
-            })
+            }),
+            providesTags: ["Trainings"]
 
         }),
         deleteProgramm: builder.mutation<{ message: string }, string>({
@@ -36,7 +39,8 @@ const trainerSlice = api.injectEndpoints({
                 url: `/trainer/programs/${id}/`,
                 method: "DELETE"
 
-            })
+            }),
+            invalidatesTags: ["Trainings"]
         }),
 
         createProgramm: builder.mutation<TrainingProgram, CreateTrainingRequest>({
@@ -44,7 +48,8 @@ const trainerSlice = api.injectEndpoints({
                 url: `/trainer/programs/create/`,
                 method: "POST",
                 body: JSON.stringify(info)
-            })
+            }),
+            invalidatesTags: ["Trainings"]
         }),
 
         // learners 
@@ -59,11 +64,18 @@ const trainerSlice = api.injectEndpoints({
             query: () => ({
                 url: '/users/categories/'
             })
-        })
+        }),
+
+        // linkages
+        employerLinkages: builder.query<JobsResponse, void>({
+            query: () => ({
+                url: '/trainer/job-opportunities/'
+            })
+        }),
     })
 })
 
-export const { useTrainerOverviewQuery, useAllCategorysQuery, useProgrammListQuery, useDeleteProgrammMutation, useLearnerListQuery, useAnalyticsChartQuery, useCreateProgrammMutation } = trainerSlice
+export const { useTrainerOverviewQuery, useEmployerLinkagesQuery, useAllCategorysQuery, useProgrammListQuery, useDeleteProgrammMutation, useLearnerListQuery, useAnalyticsChartQuery, useCreateProgrammMutation } = trainerSlice
 
 
 
