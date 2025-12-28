@@ -1,16 +1,15 @@
 "use client";
 
-import { useState } from 'react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,72 +19,86 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/alert-dialog";
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
+  TableCaption,
 } from "@/components/ui/table";
-import { Eye, Ban, CheckCircle, Search, ChevronLeft, ChevronRight, Download } from 'lucide-react';
-import { jobSeekers } from '@/data/JobSeekters.data';
-import { JobSeeker } from '@/types/JobSeekers.type';
-import { toast } from 'sonner';
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import {
+  Search,
+  Ban,
+  CheckCircle,
+  Download,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
+import { format } from "date-fns";
+import { toast } from "sonner";
+import type { JobSeeker } from "@/types/admin/jobSeeker.type";
+import { useGetJobSeekersQuery } from "@/store/api/adminSlice/jobSeekerApiSlice";
+
+const ITEMS_PER_PAGE = 9;
 
 const JobSeekersTable = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('All Users');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [typeFilter, setTypeFilter] = useState<"all" | "general" | "agency_referred">("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedJobSeeker, setSelectedJobSeeker] = useState<JobSeeker | null>(null);
-  const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [showSuspendDialog, setShowSuspendDialog] = useState(false);
   const [showApproveDialog, setShowApproveDialog] = useState(false);
 
-  const itemsPerPage = 9;
+  const { data, isLoading, isFetching, error } = useGetJobSeekersQuery();
 
-  const filteredJobSeekers = jobSeekers.filter(seeker => {
-    const matchesSearch = seeker.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         seeker.id.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterStatus === 'All Users' || seeker.status === filterStatus;
+  const allJobSeekers = data?.results ?? [];
+
+  // Client-side filtering
+  const filteredJobSeekers = allJobSeekers.filter((seeker) => {
+    const matchesSearch =
+      seeker.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      seeker.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      seeker.email.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesFilter = typeFilter === "all" || seeker.user_type === typeFilter;
+
     return matchesSearch && matchesFilter;
   });
 
-  const totalPages = Math.ceil(filteredJobSeekers.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedJobSeekers = filteredJobSeekers.slice(startIndex, startIndex + itemsPerPage);
+  // Client-side pagination
+  const totalPages = Math.ceil(filteredJobSeekers.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedJobSeekers = filteredJobSeekers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
-  const handleViewResume = () => {
-   toast.success("Resume Downloaded")
+  const handleViewResume = (url: string | null) => {
+    if (url) {
+      window.open(url, "_blank");
+      toast.success("Resume opened in new tab");
+    } else {
+      toast.info("No resume uploaded yet");
+    }
   };
 
-  const handleSuspendClick = (seeker: JobSeeker) => {
-    setSelectedJobSeeker(seeker);
-    setShowSuspendDialog(true);
+ 
+  const formatJoinDate = (iso: string) => format(new Date(iso), "dd MMM yyyy");
+
+  const getUserTypeConfig = (type: string) => {
+    switch (type) {
+      case "agency_referred":
+        return { color: "bg-purple-100 text-purple-800", label: "Agency Referred" };
+      default:
+        return { color: "bg-green-100 text-green-800", label: "General User" };
+    }
   };
 
-  const handleApproveClick = (seeker: JobSeeker) => {
-    setSelectedJobSeeker(seeker);
-    setShowApproveDialog(true);
-  };
+  const resetPage = () => setCurrentPage(1);
 
-  const handleSuspendConfirm = () => {
-    console.log('Suspending job seeker:', selectedJobSeeker);
-    setShowSuspendDialog(false);
-  };
-
-  const handleApproveConfirm = () => {
-    console.log('Approving job seeker:', selectedJobSeeker);
-    setShowApproveDialog(false);
-  };
+  if (isLoading) return <div className="text-center py-10">Loading job seekers...</div>;
+  if (error) return <div className="text-center py-10 text-red-600">Failed to load job seekers</div>;
 
   return (
     <div className="lg:max-w-2xl xl:max-w-[1920px] mx-auto min-h-[calc(100vh-170px)] bg-white p-4 md:p-6 lg:p-8">
@@ -93,86 +106,81 @@ const JobSeekersTable = () => {
         {/* Header Section */}
         <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
           <div className="relative w-full sm:w-80">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
-              placeholder="Search by name or ID"
+              placeholder="Search by name, email or ID"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                resetPage();
+              }}
               className="pl-10"
             />
           </div>
-          <Select value={filterStatus} onValueChange={setFilterStatus}>
+          <Select
+            value={typeFilter}
+            onValueChange={(value) => {
+              setTypeFilter(value as typeof typeFilter);
+              resetPage();
+            }}
+          >
             <SelectTrigger className="w-full sm:w-48">
               <SelectValue placeholder="All Users" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="All Users">All Users</SelectItem>
-              <SelectItem value="Normal user">Normal user</SelectItem>
-              <SelectItem value="Court referred">Court referred</SelectItem>
+              <SelectItem value="all">All Users</SelectItem>
+              <SelectItem value="general">General User</SelectItem>
+              <SelectItem value="agency_referred">Agency Referred</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         {/* Desktop Table View */}
-        <div className="hidden md:block bg-white rounded-lg shadow overflow-x-scroll">
+        <div className="hidden md:block bg-white rounded-lg shadow overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>ID</TableHead>
                 <TableHead>Name</TableHead>
-                <TableHead>Skills</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Join Date</TableHead>
+                <TableHead>User Type</TableHead>
                 <TableHead className="text-center">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginatedJobSeekers.map((seeker) => (
-                <TableRow key={`${seeker.id}-${seeker.name}`}>
-                  <TableCell className="font-medium">{seeker.id}</TableCell>
-                  <TableCell>{seeker.name}</TableCell>
-                  <TableCell>{seeker.skills}</TableCell>
-                  <TableCell>
-                    <span
-                      className={`inline-flex items-center px-3 py-1 rounded-md text-sm font-medium ${
-                        seeker.status === 'Court referred'
-                          ? 'bg-purple-100 text-purple-800'
-                          : 'bg-green-100 text-green-800'
-                      }`}
-                    >
-                      {seeker.status}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center justify-center gap-3">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleViewResume}
-                        className="gap-2 text-xs"
-                      >
-                        <Download className="h-4 w-4" />
-                        View Resume
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleSuspendClick(seeker)}
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Ban className="h-5 w-5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleApproveClick(seeker)}
-                        className="text-green-500 hover:text-green-700 hover:bg-green-50"
-                      >
-                        <CheckCircle className="h-5 w-5" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {paginatedJobSeekers.map((seeker) => {
+                const typeConfig = getUserTypeConfig(seeker.user_type);
+                return (
+                  <TableRow key={seeker.id}>
+                    <TableCell className="font-medium text-xs">
+                      {seeker.id.slice(0, 8)}...
+                    </TableCell>
+                    <TableCell className="font-medium">{seeker.full_name}</TableCell>
+                    <TableCell>{seeker.email}</TableCell>
+                    <TableCell>{formatJoinDate(seeker.date_joined)}</TableCell>
+                    <TableCell>
+                      <span className={`inline-flex items-center px-3 py-1 rounded-md text-sm font-medium ${typeConfig.color}`}>
+                        {typeConfig.label}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center justify-center gap-3">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleViewResume(seeker.resume_pdf_url)}
+                          className="gap-2 text-xs"
+                          disabled={!seeker.resume_pdf_url}
+                        >
+                          <Download className="h-4 w-4" />
+                          View Resume
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
             {paginatedJobSeekers.length === 0 && (
               <TableCaption>No job seekers found.</TableCaption>
@@ -182,60 +190,43 @@ const JobSeekersTable = () => {
 
         {/* Mobile Card View */}
         <div className="md:hidden space-y-4">
-          {paginatedJobSeekers.map((seeker) => (
-            <Card key={`${seeker.id}-${seeker.name}`}>
-              <CardHeader className="pb-3">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-sm text-gray-500">ID: {seeker.id}</p>
-                    <h3 className="font-semibold text-lg">{seeker.name}</h3>
+          {paginatedJobSeekers.map((seeker) => {
+            const typeConfig = getUserTypeConfig(seeker.user_type);
+            return (
+              <Card key={seeker.id}>
+                <CardHeader className="pb-3">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="text-sm text-gray-500">ID: {seeker.id.slice(0, 8)}...</p>
+                      <h3 className="font-semibold text-lg">{seeker.full_name}</h3>
+                      <p className="text-sm text-gray-600">{seeker.email}</p>
+                    </div>
+                    <span className={`inline-flex items-center px-3 py-1 rounded-md text-xs font-medium ${typeConfig.color}`}>
+                      {typeConfig.label}
+                    </span>
                   </div>
-                  <span
-                    className={`inline-flex items-center px-3 py-1 rounded-md text-xs font-medium ${
-                      seeker.status === 'Court referred'
-                        ? 'bg-purple-100 text-purple-800'
-                        : 'bg-green-100 text-green-800'
-                    }`}
-                  >
-                    {seeker.status}
-                  </span>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="text-sm">
-                  <p className="text-gray-500">Skills</p>
-                  <p className="font-medium">{seeker.skills}</p>
-                </div>
-                <div className="flex gap-2 pt-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleViewResume}
-                    className="gap-2 flex-1"
-                  >
-                    <Download className="h-4 w-4" />
-                    View Resume
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => handleSuspendClick(seeker)}
-                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                  >
-                    <Ban className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => handleApproveClick(seeker)}
-                    className="text-green-500 hover:text-green-700 hover:bg-green-50"
-                  >
-                    <CheckCircle className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="text-sm">
+                    <p className="text-gray-500">Joined</p>
+                    <p className="font-medium">{formatJoinDate(seeker.date_joined)}</p>
+                  </div>
+                  <div className="flex gap-2 pt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleViewResume(seeker.resume_pdf_url)}
+                      className="gap-2 flex-1"
+                      disabled={!seeker.resume_pdf_url}
+                    >
+                      <Download className="h-4 w-4" />
+                      View Resume
+                    </Button>                    
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
 
         {/* Pagination */}
@@ -243,94 +234,23 @@ const JobSeekersTable = () => {
           <Button
             variant="outline"
             size="icon"
-            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-            disabled={currentPage === 1}
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage === 1 || isFetching}
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <span className="text-sm font-medium">
-            Page {currentPage} of {totalPages || 1}
+            Page {currentPage} of {totalPages || 1} ({filteredJobSeekers.length} total)
           </span>
           <Button
             variant="outline"
             size="icon"
-            onClick={() => setCurrentPage(prev => Math.min(totalPages || 1, prev + 1))}
-            disabled={currentPage === totalPages || totalPages === 0}
+            onClick={() => setCurrentPage((p) => Math.min(totalPages || 1, p + 1))}
+            disabled={currentPage === totalPages || isFetching}
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
-
-        {/* Resume Dialog */}
-        <Dialog open={showProfileDialog} onOpenChange={setShowProfileDialog}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle className="text-xl font-semibold">Job Seeker Resume</DialogTitle>
-            </DialogHeader>
-            {selectedJobSeeker && (
-              <div className="space-y-4 pt-4">
-                <div>
-                  <p className="text-sm text-gray-600">Full Name</p>
-                  <p className="font-semibold text-lg">{selectedJobSeeker.name}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Skills</p>
-                  <p className="font-medium">{selectedJobSeeker.skills}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Status</p>
-                  <span
-                    className={`inline-flex items-center px-3 py-1 rounded-md text-sm font-medium ${
-                      selectedJobSeeker.status === 'Court referred'
-                        ? 'bg-purple-100 text-purple-800'
-                        : 'bg-green-100 text-green-800'
-                    }`}
-                  >
-                    {selectedJobSeeker.status}
-                  </span>
-                </div>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
-
-        {/* Suspend Dialog */}
-        <AlertDialog open={showSuspendDialog} onOpenChange={setShowSuspendDialog}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Suspend Job Seeker</AlertDialogTitle>
-              <AlertDialogDescription>
-                Are you sure you want to suspend <strong>{selectedJobSeeker?.name}</strong>?
-                <br />
-                They will no longer be able to apply for jobs.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleSuspendConfirm} className="bg-red-600 hover:bg-red-700">
-                Confirm Suspend
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-
-        {/* Approve Dialog */}
-        <AlertDialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Approve Job Seeker</AlertDialogTitle>
-              <AlertDialogDescription>
-                Approve <strong>{selectedJobSeeker?.name}</strong> to actively seek jobs?
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleApproveConfirm} className="bg-green-600 hover:bg-green-700">
-                Confirm Approve
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
       </div>
     </div>
   );

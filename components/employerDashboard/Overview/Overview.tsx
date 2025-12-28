@@ -1,95 +1,93 @@
-import OverviewCard from '@/components/elements/OverviewCard';
-import React from 'react';
-import OverviewPieChart from './OverviewPieChart';
-import OverviewBarChart from './OverviewBarChart';
+"use client";
 
-// Types
-interface OverviewCardData {
-  title: string;
-  value: string | number;
-  description: string;
-  trend: string;
-  icon: 'users' | 'programs' | 'verifications' | 'placement' | 'revenue' | 'monthly';
-}
+import OverviewCard from "@/components/elements/OverviewCard";
+import OverviewPieChart from "./OverviewPieChart";
+import OverviewBarChart from "./OverviewBarChart";
+import { useGetEmployerDashboardQuery } from "@/store/api/employerSlice/dashboardApiSlice";
 
-interface PieChartData {
-  name: string;
-  value: number;
-  color: string;
-}
+const Overview = () => {
+  const { data, isLoading, isError } = useGetEmployerDashboardQuery();
 
-interface BarChartData {
-  name: string;
-  value: number;
-}
+  if (isLoading) {
+    return (
+      <div className="w-full min-h-screen bg-gray-50 p-8 flex items-center justify-center">
+        <p className="text-lg text-gray-600">Loading dashboard...</p>
+      </div>
+    );
+  }
 
-const Overview: React.FC = () => {
-  // Dummy data for overview cards
-  const overviewCards: OverviewCardData[] = [
+  if (isError || !data) {
+    return (
+      <div className="w-full min-h-screen bg-gray-50 p-8 flex items-center justify-center">
+        <p className="text-lg text-red-600">Failed to load dashboard data</p>
+      </div>
+    );
+  }
+
+  // Overview Cards based on API response
+  const overviewCards = [
     {
-      title: 'Total Users',
-      value: '12,874',
-      description: 'All user types',
-      trend: '+12.5% from last month',
-      icon: 'users'
+      title: "Total Jobs Posted",
+      value: data.total_jobs_posted.toLocaleString(),
+      description: "All time",
+      trend: "", // no trend data in API
+      icon: "users" as const,
     },
     {
-      title: 'Active Programs',
-      value: '48',
-      description: 'Currently running',
-      trend: '+15% from last month',
-      icon: 'programs'
+      title: "Active Jobs",
+      value: data.active_jobs.toLocaleString(),
+      description: "Currently open",
+      trend: "",
+      icon: "programs" as const,
     },
     {
-      title: 'Pending Verifications',
-      value: '48',
-      description: 'Currently running',
-      trend: '+15% from last month',
-      icon: 'verifications'
+      title: "Total Applicants",
+      value: data.total_applicants.toLocaleString(),
+      description: "Across all jobs",
+      trend: "",
+      icon: "verifications" as const,
     },
     {
-      title: 'Placement rate',
-      value: '84%',
-      description: 'Last 30 days',
-      trend: '+15% from last month',
-      icon: 'placement'
+      title: "Hired Candidates",
+      value: data.hired_candidates.toLocaleString(),
+      description: "Successfully placed",
+      trend: "",
+      icon: "placement" as const,
     },
   ];
 
-  // Dummy data for pie chart
-  const pieChartData: PieChartData[] = [
-    { name: 'Trainees', value: 6420, color: '#a855f7' },
-    { name: 'Job Seekers', value: 3850, color: '#3b82f6' },
-    { name: 'Trainers', value: 1420, color: '#10b981' },
-    { name: 'Employers', value: 650, color: '#f59e0b' }
-  ];
+  // Pie chart: Application status distribution
+  const pieChartData = [
+    { name: "Applied", value: data.applied_count, color: "#3b82f6" },
+    { name: "Shortlisted", value: data.shortlisted_count, color: "#10b981" },
+    { name: "Rejected", value: data.rejected_count, color: "#ef4444" },
+    { name: "Hired", value: data.hired_candidates, color: "#a855f7" },
+  ].filter((item) => item.value > 0); // hide zero values
 
-  // Dummy data for bar chart
-  const barChartData: BarChartData[] = [
-  { name: 'Web', value: 450 },
-  { name: 'IT', value: 300 },
-  { name: 'Health', value: 280 },
-  { name: 'Flutter', value: 150 },
-  { name: 'Marketing', value: 200 },
-  { name: 'Spoken', value: 380 },
-  { name: 'Design', value: 250 },
-  { name: 'Business', value: 180 }
-];
+  // Bar chart: Top jobs by applicant count
+  const barChartData = data.top_jobs.map((job) => ({
+    name: job.job_title.length > 15 ? job.job_title.slice(0, 15) + "..." : job.job_title,
+    value: job.applicant_count,
+  }));
 
   return (
     <div className="w-full min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
       <div className="space-y-6">
         {/* Overview Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-          {overviewCards.slice().map((card, index) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+          {overviewCards.map((card, index) => (
             <OverviewCard key={index} {...card} />
           ))}
         </div>
 
         {/* Charts Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-1 xl:grid-cols-3 gap-4 md:gap-6">
-          <OverviewPieChart data={pieChartData} />
-          <OverviewBarChart data={barChartData} />
+          <div className="xl:col-span-1">
+            <OverviewPieChart data={pieChartData} />
+          </div>
+          <div className="xl:col-span-2">
+            <OverviewBarChart data={barChartData} />
+          </div>
         </div>
       </div>
     </div>
