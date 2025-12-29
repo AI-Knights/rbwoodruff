@@ -48,7 +48,7 @@ const OverviewBarChart: React.FC<{ data: BarChartData[] }> = ({ data }) => {
         </ChartContainer>
 
         {/* Additional Stats */}
-        <div className="mt-6 grid grid-cols-2 gap-4 pt-4 border-t">
+        {/* <div className="mt-6 grid grid-cols-2 gap-4 pt-4 border-t">
           <div>
             <p className="text-sm text-gray-600">Average Completion Rate</p>
             <p className="text-2xl font-bold">82%</p>
@@ -57,7 +57,7 @@ const OverviewBarChart: React.FC<{ data: BarChartData[] }> = ({ data }) => {
             <p className="text-sm text-gray-600">Total Enrollments</p>
             <p className="text-2xl font-bold">2,180</p>
           </div>
-        </div>
+        </div> */}
       </CardContent>
     </Card>
   );

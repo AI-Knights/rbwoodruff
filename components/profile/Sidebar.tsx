@@ -1,4 +1,6 @@
 "use client";
+
+import { useState } from "react";
 import {
   BarChart3,
   LogOut,
@@ -14,7 +16,17 @@ import { usePathname, useRouter } from "next/navigation";
 import Logo from "../elements/Logo";
 import { clearAuthCookies } from "@/lib/manage_token";
 import { toast } from "sonner";
-
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const Sidebar = ({
   isOpen,
@@ -24,7 +36,9 @@ const Sidebar = ({
   onClose: () => void;
 }) => {
   const pathname = usePathname();
-  const router = useRouter()
+  const router = useRouter();
+  const [openLogoutDialog, setOpenLogoutDialog] = useState(false);
+
   const routes = [
     { name: "Profile", icon: User, path: "/profile" },
     {
@@ -34,25 +48,23 @@ const Sidebar = ({
     },
   ];
 
-  // Helper function to check if route is active
   const isRouteActive = (routePath: string) => {
-    // Exact match for dashboard overview
     if (routePath === "/profile") {
       return pathname === "/profile";
     }
-    // For other routes, check if pathname starts with the route path
     return pathname.startsWith(routePath);
   };
 
   const handleLogout = () => {
-    clearAuthCookies()
-    toast.success('logout successfull')
-    router.push("/auth")
-  }
+    clearAuthCookies();
+    toast.success("Logout successful");
+    router.push("/auth/sign-in");
+    setOpenLogoutDialog(false); // close dialog after logout
+  };
 
   return (
     <>
-      {/* Mobile/Tablet Overlay - Only shows when sidebar is open on small screens */}
+      {/* Overlay */}
       {isOpen && (
         <div
           className="fixed inset-0 bg-black/15 z-40 lg:hidden"
@@ -71,9 +83,8 @@ const Sidebar = ({
         `}
       >
         <div className="flex flex-col h-full relative">
-          {/* Logo */}
+          {/* Mobile Close Button */}
           <div className="flex items-center justify-between p-2 lg:hidden">
-            {/* Close button - Only visible on mobile/tablet */}
             <Button
               variant="ghost"
               size="icon"
@@ -83,6 +94,8 @@ const Sidebar = ({
               <X className="h-5 w-5" />
             </Button>
           </div>
+
+          {/* Logo */}
           <div className="py-10">
             <Logo href="/employer-dashboard" />
           </div>
@@ -97,11 +110,12 @@ const Sidebar = ({
                   <li key={route.path}>
                     <Link
                       href={route.path}
-                      onClick={() => onClose()} // Close sidebar on mobile when clicking a link
-                      className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors text-lg font-semibold ${isActive
-                        ? "bg-blue-50 text-blue-600"
-                        : "text-[#854C3A] hover:bg-gray-50"
-                        }`}
+                      onClick={() => onClose()}
+                      className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors text-lg font-semibold ${
+                        isActive
+                          ? "bg-blue-50 text-blue-600"
+                          : "text-[#854C3A] hover:bg-gray-50"
+                      }`}
                     >
                       <Icon className="h-5 w-5" />
                       <span className="font-medium">{route.name}</span>
@@ -111,10 +125,38 @@ const Sidebar = ({
               })}
             </ul>
           </nav>
-          <Button onClick={handleLogout} variant={"ghost"} className="absolute bottom-10 left-4 flex items-center gap-4 text-[#854C3A] text-lg font-semibold">
-            <LogOut />
-            Logout
-          </Button>
+
+          {/* Logout Button with Confirmation Dialog */}
+          <div className="absolute bottom-10 left-4 w-[calc(100%-2rem)]">
+            <AlertDialog open={openLogoutDialog} onOpenChange={setOpenLogoutDialog}>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="w-full flex items-center justify-start gap-4 text-[#854C3A] text-lg font-semibold"
+                >
+                  <LogOut className="h-5 w-5" />
+                  Logout
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you sure you want to log out?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    You will be redirected to the sign-in page.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleLogout}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    Yes, Log out
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         </div>
       </aside>
     </>

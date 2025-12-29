@@ -22,6 +22,17 @@ export const api = createApi({
       return headers;
     },
   }),
-  tagTypes: ["Employer","Trainer","Payment", "Trainee", "Category", "Job" , "Trainings"],
+  tagTypes: [
+    "Employer",
+    "Trainer",
+    "Payment",
+    "Trainee",
+    "Category",
+    "Job",
+    "Trainings",
+    "Application",
+    "AgencyUser",
+    "Case"
+  ],
   endpoints: () => ({}),
 });

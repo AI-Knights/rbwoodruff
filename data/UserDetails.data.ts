@@ -3,10 +3,10 @@ import { UserDetails } from "@/types/UserDetails.type";
 export const userDetails: UserDetails[] = [
   {
     id: "1",
-    name: "Marcus Johnson",
+    name: "John Doe",
     status: "Active",
     caseId: "CR-2025-1043",
-    email: "marcus@gmail.com",
+    email: "referred_user@gmail.com",
     phone: "(555) 123-4569",
 
     complianceCompletion: 85,
@@ -31,8 +31,8 @@ export const userDetails: UserDetails[] = [
       { title: "Skills", status: "Completed" },
     ],
 
-    totalApplications: 12,
-    coursesEnrolled: 3,
+    totalApplications: 0,
+    coursesEnrolled: 0,
 
     certificateStatus: "Verified",
     documents: [

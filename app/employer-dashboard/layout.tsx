@@ -9,7 +9,6 @@ export default function RootLayout({
   return (
     <section className="max-w-[1920px] mx-auto">
       <EmployerLayout>
-        <Toaster/>
         {children}
         </EmployerLayout>
     </section>

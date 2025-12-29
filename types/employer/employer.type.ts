@@ -45,16 +45,29 @@ export interface ApplicantForJob {
     applicant: string;
     applicant_name: string;
     applicant_email: string;
-    status: 'pending' | 'reviewed' | 'interviewed' | 'hired' | 'rejected';
+    status: ApplicationStatus;
     cover_letter: string;
     applied_at: string; 
     employer_notes: string;
     resume_completeness: number; 
     resume_pdf_url: string | null;
+    certifications: null| string;
 }
 export interface ApplicantsForJobResponse {
     count: number;
     next: string | null;
     previous: string | null;
     results: ApplicantForJob[];
+}
+
+
+export type ApplicationStatus =
+  | "pending"
+  | "shortlisted"
+  | "rejected"
+  | "hired";
+
+export interface UpdateApplicationStatusBody {
+  id: string;
+  status: ApplicationStatus;
 }

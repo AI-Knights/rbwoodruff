@@ -28,7 +28,7 @@ export const employerApi = api.injectEndpoints({
       query: ({jobId}) => ({
         url: `/employer/jobs/${jobId}/applicants/`,
       }),
-      providesTags: ["Employer"]
+      providesTags: ["Application"]
     }),
   }),
 });

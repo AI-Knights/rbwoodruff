@@ -62,7 +62,7 @@ const Overview = () => {
     { name: "Shortlisted", value: data.shortlisted_count, color: "#10b981" },
     { name: "Rejected", value: data.rejected_count, color: "#ef4444" },
     { name: "Hired", value: data.hired_candidates, color: "#a855f7" },
-  ].filter((item) => item.value > 0); // hide zero values
+  ]
 
   // Bar chart: Top jobs by applicant count
   const barChartData = data.top_jobs.map((job) => ({

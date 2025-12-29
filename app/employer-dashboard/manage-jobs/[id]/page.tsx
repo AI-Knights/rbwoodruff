@@ -16,7 +16,7 @@ export default async function page({ params }: Props) {
 
   return (
     <div className="w-full min-h-screen p-4">
-      <div className="max-w-[1920px] mx-auto space-y-6">
+      <div className="max-w-[1920px] mx-auto space-y-2">
         <div className="flex items-center gap-3">
           <Link href="/employer-dashboard/manage-jobs">
             <Button variant="ghost" size="icon">
@@ -25,7 +25,6 @@ export default async function page({ params }: Props) {
           </Link>
           <h1 className="text-2xl font-bold text-gray-900">Applicants & Hiring</h1>
         </div>
-
         <div>
           <JobApplicant id={id} />
         </div>

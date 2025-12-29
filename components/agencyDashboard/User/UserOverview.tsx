@@ -75,7 +75,8 @@ export default function UserOverview({
             <div className="flex justify-between items-center">
               <span className="text-lg text-gray-600 font-semibold">Job Applications</span>
               <div className="bg-black text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold">
-                {jobApplications}
+                {/* {jobApplications} */}
+                0
               </div>
             </div>
           </CardContent>
@@ -85,7 +86,8 @@ export default function UserOverview({
             <div className="flex justify-between items-center">
               <span className="text-lg text-gray-600 font-semibold">Training Courses</span>
               <div className="bg-black text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold">
-                {trainingCourses}
+                {/* {trainingCourses} */}
+                0
               </div>
             </div>
           </CardContent>
@@ -93,7 +95,7 @@ export default function UserOverview({
       </div>
 
       {/* Timeline */}
-      <Card>
+      {/* <Card>
         <CardContent className="pt-6">
           <h3 className="font-semibold mb-4">Timeline</h3>
           <div className="relative">
@@ -119,7 +121,7 @@ export default function UserOverview({
             ))}
           </div>
         </CardContent>
-      </Card>
+      </Card> */}
     </div>
   );
 }

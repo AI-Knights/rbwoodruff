@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams } from "next/navigation";
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import {UserIcon } from "lucide-react";
@@ -15,7 +15,7 @@ interface UserDetailsProps{
 }
 
 export default function UserDetails({id}:UserDetailsProps) {
-  const user = userDetails.find((u) => u.id === id);
+  const user = userDetails.find((u) => u.id === "1");
 
   if (!user) {
     return <div className="p-8 text-center">User not found</div>;
@@ -38,7 +38,7 @@ export default function UserDetails({id}:UserDetailsProps) {
           </div>
           <div className="space-y-3 text-sm">
             <div>
-              <p className="text-gray-600">Court Register ID</p>
+              <p className="text-gray-600">Case ID</p>
               <p className="font-medium">{user.caseId}</p>
             </div>
             <div>

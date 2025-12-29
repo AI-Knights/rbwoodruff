@@ -77,15 +77,6 @@ export default function ReportsExportForm() {
               <FileText className="h-5 w-5" />
               Single User Report
             </h3>
-            <div className="flex justify-end">
-              <Button
-                onClick={handleCSVExport}
-                className="gap-2 text-sm"
-              >
-                <Download className="h-4 w-4" />
-                Download CSV File
-              </Button>
-            </div>
           </CardTitle>
           {/* CSV Export Button */}
         </CardHeader>
@@ -116,35 +107,6 @@ export default function ReportsExportForm() {
                         {users.map((user) => (
                           <SelectItem key={user.id} value={user.id}>
                             {user.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Report Type */}
-              <FormField
-                control={form.control}
-                name="reportType"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Report Type</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger className="bg-gray-50 w-full">
-                          <SelectValue placeholder="Select report type..." />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {reportTypes.map((type) => (
-                          <SelectItem key={type} value={type}>
-                            {type}
                           </SelectItem>
                         ))}
                       </SelectContent>

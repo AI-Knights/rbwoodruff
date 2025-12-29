@@ -1,9 +1,11 @@
 import { api } from "@/store/api/ApiSlice";
 import { Job, JobsResponse } from "../../../types/employer/job.type";
 import {
+  ApplicantForJob,
   CreateJobBody,
   CreateJobResponse,
   PaginatedCategoryResponse,
+  UpdateApplicationStatusBody,
 } from "@/types/employer/employer.type";
 
 export const employerJobApi = api.injectEndpoints({
@@ -38,7 +40,16 @@ export const employerJobApi = api.injectEndpoints({
       invalidatesTags: ["Job"], // if you have job list later
     }),
     getJobCategories: builder.query<PaginatedCategoryResponse, void>({
-      query: ()=> "/users/categories/"
+      query: ()=> "/users/categories/",
+    }),
+    updateApplication: builder.mutation<ApplicantForJob,UpdateApplicationStatusBody>({
+      query: ({id, status})=>({
+        url: `/employer/applicants/${id}/status/`,
+        method: "PATCH",
+        body: {status:status},
+        credentials: "include"
+      }),
+      invalidatesTags:["Application"]
     })
   }),
 });
@@ -48,5 +59,6 @@ export const {
   useUpdateJobMutation,
   useDeleteJobMutation,
   useCreateJobMutation,
-  useGetJobCategoriesQuery
+  useGetJobCategoriesQuery,
+  useUpdateApplicationMutation
 } = employerJobApi;

@@ -4,6 +4,8 @@ import Image from 'next/image';
 import { ApplicantCard } from '../ApplicantCard'
 import { useGetJobApplicantsQuery } from '@/store/api/adminSlice/EmployerSlice';
 import image from "@/assets/no-data-concept-illustration_86047-488.png"
+
+
 export default function JobApplicant({ id }: { id: string }) {
   console.log(id)
   const applicantJob = useGetJobApplicantsQuery({ jobId: id });
@@ -18,8 +20,7 @@ export default function JobApplicant({ id }: { id: string }) {
 
   return (
     <div>
-
-      <p className="text-sm text-muted-foreground">
+      <p className="text-sm text-muted-foreground px-6 pb-2">
 
         View all applicants across all jobs
       </p>

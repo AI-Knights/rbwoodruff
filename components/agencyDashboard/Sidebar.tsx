@@ -27,7 +27,7 @@ const Sidebar = ({
       path: "/agency-dashboard/user-roaster",
     },
     { name: "Reports & Export", icon: Shield, path: "/agency-dashboard/reports" },    
-    { name: "Audit Logs", icon: Shield, path: "/agency-dashboard/audit" },    
+    { name: "Manage Case", icon: Shield, path: "/agency-dashboard/case" },    
   ];
 
   // Helper function to check if route is active
