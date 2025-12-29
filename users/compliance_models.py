@@ -15,6 +15,7 @@ class CaseAssignment(models.Model):
         ('delayed', 'Delayed'),
         ('non_compliant', 'Non-Compliant'),
         ('completed', 'Completed'),
+        ('closed', 'Closed'),
     ]
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

@@ -79,3 +79,32 @@ class AgencyDashboardSerializer(serializers.Serializer):
     non_compliant = serializers.IntegerField()
     quiz_completed_count = serializers.IntegerField()
     resume_completed_count = serializers.IntegerField()
+
+
+class CourtDateUserSerializer(serializers.ModelSerializer):
+    """Serializer for users with court dates set"""
+    user_id = serializers.UUIDField(source='referred_user.user.id', read_only=True)
+    user_name = serializers.CharField(source='referred_user.user.full_name', read_only=True)
+    user_email = serializers.CharField(source='referred_user.user.email', read_only=True)
+    court_name = serializers.CharField(source='referred_user.court_name', read_only=True)
+    referred_case_id = serializers.CharField(source='referred_user.case_id', read_only=True)
+    
+    class Meta:
+        model = CaseAssignment
+        fields = [
+            'id', 'user_id', 'user_name', 'user_email', 'case_id', 
+            'referred_case_id', 'court_date', 'compliance_status', 'court_name',
+            'assigned_date', 'notes'
+        ]
+        read_only_fields = ['id', 'assigned_date']
+
+
+class CSVUploadResponseSerializer(serializers.Serializer):
+    """Response serializer for CSV upload results"""
+    total_rows = serializers.IntegerField()
+    successful_matches = serializers.IntegerField()
+    failed_matches = serializers.IntegerField()
+    failures = serializers.ListField(
+        child=serializers.DictField(),
+        required=False
+    )

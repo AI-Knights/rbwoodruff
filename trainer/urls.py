@@ -2,8 +2,9 @@ from django.urls import path
 from .views import (
     TrainerDashboardView, ProgramCreateView, ProgramListView, ProgramUpdateView,
     LearnerListView, LearnerDetailView, PendingCertificatesView,
-    VerifyCertificateView, AnalyticsView, EmployerLinkageListView
+    VerifyCertificateView, AnalyticsView, EmployerLinkageListView, JobOpportunitiesView
 )
+
 
 
 urlpatterns = [
@@ -28,4 +29,7 @@ urlpatterns = [
     
     # Employer Linkage
     path('employer-linkages/', EmployerLinkageListView.as_view(), name='employer_linkages'),
+    
+    # Job Opportunities
+    path('job-opportunities/', JobOpportunitiesView.as_view(), name='job_opportunities'),
 ]

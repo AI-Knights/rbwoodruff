@@ -29,9 +29,9 @@ class GeneralUserAdmin(admin.ModelAdmin):
 
 @admin.register(ReferredUser)
 class ReferredUserAdmin(admin.ModelAdmin):
-    list_display = ('user', 'phone_number', 'case_name', 'court_name', 'has_paid', 'created_at')
+    list_display = ('user', 'phone_number', 'case_id', 'court_name', 'has_paid', 'created_at')
     list_filter = ('has_paid', 'created_at')
-    search_fields = ('user__email', 'case_name', 'court_name')
+    search_fields = ('user__email', 'case_id', 'court_name')
     readonly_fields = ('created_at', 'updated_at')
 
 

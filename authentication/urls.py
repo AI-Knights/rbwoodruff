@@ -1,7 +1,8 @@
 from django.urls import path
 from .views import (
     RegisterView, SendOTPView, VerifyOTPView, LoginView, LogoutView,
-    ProfileView, PasswordResetRequestView, PasswordResetConfirmView
+    ProfileView, PasswordResetRequestView, VerifyResetOtpView, SetNewPasswordView,
+    ChangePasswordView
 )
 from .payment_views import (
     CreateCheckoutSessionView, StripeWebhookView,
@@ -21,8 +22,10 @@ urlpatterns = [
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('logout/', LogoutView.as_view(), name='logout'),
     path('profile/', ProfileView.as_view(), name='profile'),
+    path('change-password/', ChangePasswordView.as_view(), name='change_password'),
     path('password-reset-request/', PasswordResetRequestView.as_view(), name='password_reset_request'),
-    path('password-reset-confirm/', PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
+    path('password-reset-verify-otp/', VerifyResetOtpView.as_view(), name='verify_reset_otp'),
+    path('password-reset-confirm/', SetNewPasswordView.as_view(), name='set_new_password'),
     
     # Payment - Stripe Checkout Session
     path('payment/create-checkout-session/', CreateCheckoutSessionView.as_view(), name='create_checkout_session'),

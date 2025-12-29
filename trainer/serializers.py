@@ -28,17 +28,26 @@ class LearnerSerializer(serializers.ModelSerializer):
     learner_email = serializers.CharField(source='user.email', read_only=True)
     program_name = serializers.CharField(source='program.name', read_only=True)
     has_certificate = serializers.SerializerMethodField()
+    resume_url = serializers.SerializerMethodField()
     
     class Meta:
         model = Enrollment
         fields = [
             'id', 'user', 'learner_name', 'learner_email', 'program',
             'program_name', 'status', 'progress_percentage',
-            'start_date', 'completion_date', 'has_certificate'
+            'start_date', 'completion_date', 'has_certificate', 'resume_url'
         ]
     
     def get_has_certificate(self, obj):
         return Certificate.objects.filter(enrollment=obj).exists()
+    
+    def get_resume_url(self, obj):
+        """Return resume PDF URL if available, otherwise null"""
+        try:
+            resume = obj.user.resume
+            return resume.resume_pdf_url if resume.resume_pdf_url else None
+        except:
+            return None
 
 
 class CertificateVerificationSerializer(serializers.ModelSerializer):
@@ -76,3 +85,29 @@ class TrainerDashboardSerializer(serializers.Serializer):
     pending_enrollments = serializers.IntegerField()
     average_completion_rate = serializers.FloatField()
     pending_certificate_verifications = serializers.IntegerField()
+
+
+class JobOpportunitiesSerializer(serializers.Serializer):
+    """Serializer for job opportunities available for trainer's learners"""
+    job_id = serializers.UUIDField()
+    employer_name = serializers.CharField()
+    employer_id = serializers.UUIDField()
+    employer_location = serializers.CharField()
+    employer_industry = serializers.CharField()
+    
+    job_title = serializers.CharField()
+    job_category = serializers.CharField()
+    employment_type = serializers.CharField()
+    location = serializers.CharField()
+    is_remote = serializers.BooleanField()
+    
+    salary_min = serializers.DecimalField(max_digits=10, decimal_places=2, allow_null=True)
+    salary_max = serializers.DecimalField(max_digits=10, decimal_places=2, allow_null=True)
+    salary_range = serializers.CharField()
+    
+    number_of_openings = serializers.IntegerField(allow_null=True)
+    skills_required = serializers.ListField()
+    
+    deadline = serializers.DateField(allow_null=True)
+    status = serializers.CharField()
+    posted_date = serializers.DateTimeField()

@@ -73,6 +73,15 @@ class ProgramUpdateView(generics.RetrieveUpdateDestroyAPIView):
         return TrainingProgram.objects.filter(
             provider=self.request.user.trainer_profile
         )
+    
+    def destroy(self, request, *args, **kwargs):
+        """Delete a training program with custom message"""
+        instance = self.get_object()
+        program_name = instance.name
+        self.perform_destroy(instance)
+        return Response({
+            'message': f'Training program "{program_name}" has been deleted successfully'
+        }, status=status.HTTP_200_OK)
 
 
 class LearnerListView(generics.ListAPIView):
@@ -228,3 +237,60 @@ class EmployerLinkageListView(generics.ListAPIView):
         return EmployerTrainingLinkage.objects.filter(
             training_provider=self.request.user.trainer_profile
         ).order_by('-created_at')
+
+
+class JobOpportunitiesView(APIView):
+    """List all active job opportunities with employer details"""
+    permission_classes = [IsAuthenticated, IsTrainingProvider]
+    
+    def get(self, request):
+        from users.models import Job
+        
+        # Get all active jobs
+        jobs = Job.objects.filter(
+            status='active'
+        ).select_related('employer', 'employer__user', 'category').order_by('-created_at')
+        
+        job_data = []
+        for job in jobs:
+            # Format salary range
+            if job.salary_min and job.salary_max:
+                salary_range = f"${job.salary_min:,.0f} - ${job.salary_max:,.0f}"
+            elif job.salary_min:
+                salary_range = f"${job.salary_min:,.0f}+"
+            elif job.salary_max:
+                salary_range = f"Up to ${job.salary_max:,.0f}"
+            else:
+                salary_range = "Not specified"
+            
+            job_data.append({
+                'job_id': job.id,
+                'employer_name': job.employer.company_name,
+                'employer_id': job.employer.id,
+                'employer_location': job.employer.office_location,
+                'employer_industry': job.employer.get_industry_display(),
+                
+                'job_title': job.title,
+                'job_category': job.category.name if job.category else 'Uncategorized',
+                'employment_type': job.get_employment_type_display(),
+                'location': job.location,
+                'is_remote': job.is_remote,
+                
+                'salary_min': job.salary_min,
+                'salary_max': job.salary_max,
+                'salary_range': salary_range,
+                
+                'number_of_openings': job.number_of_openings,
+                'skills_required': job.skills_required if job.skills_required else [],
+                
+                'deadline': job.deadline,
+                'status': job.status,
+                'posted_date': job.created_at
+            })
+        
+        from .serializers import JobOpportunitiesSerializer
+        serializer = JobOpportunitiesSerializer(job_data, many=True)
+        return Response({
+            'count': len(job_data),
+            'jobs': serializer.data
+        }, status=status.HTTP_200_OK)

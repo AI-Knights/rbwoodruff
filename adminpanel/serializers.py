@@ -10,11 +10,17 @@ User = get_user_model()
 
 class AdminDashboardSerializer(serializers.Serializer):
     total_users = serializers.IntegerField()
+    total_trainers = serializers.IntegerField()
+    total_employers = serializers.IntegerField()
+    total_agencies = serializers.IntegerField()
+    total_job_seekers = serializers.IntegerField()
+    total_enrollments = serializers.IntegerField()
     active_programs = serializers.IntegerField()
     total_revenue = serializers.FloatField()
     monthly_revenue = serializers.FloatField()
     pending_verifications = serializers.IntegerField()
     placement_rate = serializers.FloatField()
+
 
 
 class AgencyVerificationSerializer(serializers.ModelSerializer):
@@ -65,12 +71,13 @@ class TrainerVerificationSerializer(serializers.ModelSerializer):
 
 class UserListSerializer(serializers.ModelSerializer):
     resume_completeness = serializers.SerializerMethodField()
+    resume_pdf_url = serializers.SerializerMethodField()
     
     class Meta:
         model = UserAccount
         fields = [
             'id', 'email', 'full_name', 'user_type', 'is_active',
-            'date_joined', 'resume_completeness'
+            'date_joined', 'resume_completeness', 'resume_pdf_url'
         ]
     
     def get_resume_completeness(self, obj):
@@ -82,6 +89,15 @@ class UserListSerializer(serializers.ModelSerializer):
         except:
             return 0
         return 0
+    
+    def get_resume_pdf_url(self, obj):
+        """Get resume PDF URL from Resume model"""
+        try:
+            from users.models import Resume
+            resume = Resume.objects.get(user=obj)
+            return resume.resume_pdf_url if resume.resume_pdf_url else None
+        except:
+            return None
 
 
 class PaymentListSerializer(serializers.ModelSerializer):

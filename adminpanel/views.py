@@ -11,7 +11,7 @@ from datetime import timedelta
 
 from users.models import (
     Agency, Employer, TrainingProvider, Payment, Job,
-    TrainingProgram, JobApplication, Resume
+    TrainingProgram, JobApplication, Resume, Enrollment
 )
 from authentication.models import UserAccount
 from .serializers import (
@@ -30,7 +30,19 @@ class AdminDashboardView(APIView):
     def get(self, request):
         # Calculate metrics
         total_users = UserAccount.objects.filter(is_active=True).count()
+        
+        # User type breakdown
+        total_trainers = TrainingProvider.objects.count()
+        total_employers = Employer.objects.count()
+        total_agencies = Agency.objects.count()
+        total_job_seekers = UserAccount.objects.filter(
+            user_type__in=['general', 'agency_referred'],
+            is_active=True
+        ).count()
+        
+        # Training programs and enrollments
         active_programs = TrainingProgram.objects.filter(is_active=True).count()
+        total_enrollments = Enrollment.objects.count()
         
         # Revenue
         total_revenue = Payment.objects.filter(status='succeeded').aggregate(
@@ -57,6 +69,11 @@ class AdminDashboardView(APIView):
         
         stats = {
             'total_users': total_users,
+            'total_trainers': total_trainers,
+            'total_employers': total_employers,
+            'total_agencies': total_agencies,
+            'total_job_seekers': total_job_seekers,
+            'total_enrollments': total_enrollments,
             'active_programs': active_programs,
             'total_revenue': float(total_revenue),
             'monthly_revenue': float(monthly_revenue),
@@ -66,6 +83,7 @@ class AdminDashboardView(APIView):
         
         serializer = AdminDashboardSerializer(stats)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 
 class AgencyListView(generics.ListAPIView):
@@ -251,7 +269,8 @@ class AllUsersListView(generics.ListAPIView):
         user_type = self.request.query_params.get('user_type', None)
         
         queryset = UserAccount.objects.filter(
-            user_type__in=['general', 'agency_referred']
+            user_type__in=['general', 'agency_referred'],
+            is_active=True  # Only show active users
         )
         
         if user_type:

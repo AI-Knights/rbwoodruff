@@ -170,12 +170,35 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-# CORS_ALLOWED_ORIGINS = ["*"]
-CORS_ALLOW_CREDENTIALS = True
-ALLOWED_HOSTS = ["*"]
+# CORS Configuration
 CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
 
+# Explicitly allow all HTTP methods including PATCH
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
 
+# Allow all common headers
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
+ALLOWED_HOSTS = ["*"]
+CSRF_TRUSTED_ORIGINS = ['https://rbwoodroff.projectyard.top']
 
 
 
@@ -203,8 +226,8 @@ DOMAIN_URL = env("DOMAIN_URL", default="http://localhost:8000")
 REGISTRATION_FEE = 150.00  # USD
 
 # Stripe Checkout redirect URLs (customize in .env for production)
-STRIPE_SUCCESS_URL = env("STRIPE_SUCCESS_URL", default=f"{DOMAIN_URL}/payment/success?session_id={{CHECKOUT_SESSION_ID}}")
-STRIPE_CANCEL_URL = env("STRIPE_CANCEL_URL", default=f"{DOMAIN_URL}/payment/cancelled")
+STRIPE_SUCCESS_URL = env("STRIPE_SUCCESS_URL")
+STRIPE_CANCEL_URL = env("STRIPE_CANCEL_URL")
 
 # # google login
 # GOOGLE_CLIENT_ID = env('GOOGLE_CLIENT_ID')

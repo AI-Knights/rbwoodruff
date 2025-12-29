@@ -58,7 +58,7 @@ class ReferredUser(models.Model):
     
     # Court information - All required for court-referred users
     court_name = models.CharField(max_length=200)
-    case_name = models.CharField(max_length=200)
+    case_id = models.CharField(max_length=200)
     
     # Payment tracking
     has_paid = models.BooleanField(default=False)
@@ -70,7 +70,7 @@ class ReferredUser(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
-        return f"Referred User: {self.user.full_name} - {self.case_name}"
+        return f"Referred User: {self.user.full_name} - {self.case_id}"
 
 
 class Employer(models.Model):

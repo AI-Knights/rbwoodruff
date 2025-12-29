@@ -21,7 +21,7 @@ class GeneralUserSerializer(serializers.ModelSerializer):
 class ReferredUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReferredUser
-        fields = ["phone_number", "court_name", "case_name"]  # All required for court-referred users
+        fields = ["phone_number", "court_name", "case_id"]  # All required for court-referred users
 
 class EmployerSerializer(serializers.ModelSerializer):
     class Meta:
@@ -208,14 +208,91 @@ class LoginSerializer(serializers.Serializer):
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
-    """Serializer for retrieving user profile information"""
+    """Serializer for retrieving and updating user profile information"""
     has_paid = serializers.SerializerMethodField()
     profile_data = serializers.SerializerMethodField()
+    profile_pic = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     
     class Meta:
         model = User
         fields = ['id', 'email', 'full_name', 'user_type', 'profile_pic', 'date_joined', 'has_paid', 'profile_data']
         read_only_fields = ['id', 'email', 'user_type', 'date_joined', 'has_paid', 'profile_data']
+    
+    def validate_email(self, value):
+        """Prevent email from being updated"""
+        if self.instance and self.instance.email != value:
+            raise serializers.ValidationError("Email cannot be updated")
+        return value
+    
+    def validate_profile_pic(self, value):
+        """Validate base64 image data"""
+        if not value:
+            return value
+        
+        # Check if it's a base64 string
+        if isinstance(value, str) and value.startswith('data:image'):
+            import re
+            # Validate base64 format: data:image/[format];base64,[data]
+            pattern = r'^data:image/(jpeg|jpg|png|gif|webp|bmp);base64,[A-Za-z0-9+/=]+$'
+            if not re.match(pattern, value, re.IGNORECASE):
+                raise serializers.ValidationError(
+                    "Invalid base64 image format. Expected: data:image/[jpeg|png|gif|webp];base64,[data]"
+                )
+        elif not isinstance(value, str):
+            raise serializers.ValidationError("Profile picture must be a base64 encoded string")
+        
+        return value
+    
+    def update(self, instance, validated_data):
+        """Handle profile update with base64 image upload to Cloudinary"""
+        profile_pic_data = validated_data.pop('profile_pic', None)
+        
+        # Update basic fields (only full_name is writable)
+        instance.full_name = validated_data.get('full_name', instance.full_name)
+        
+        # Handle base64 image upload to Cloudinary
+        if profile_pic_data:
+            import cloudinary.uploader
+            import base64
+            import re
+            from io import BytesIO
+            
+            try:
+                # Extract base64 data
+                if profile_pic_data.startswith('data:image'):
+                    # Remove the data:image/[format];base64, prefix
+                    base64_data = re.sub(r'^data:image/\w+;base64,', '', profile_pic_data)
+                else:
+                    base64_data = profile_pic_data
+                
+                # Decode base64 to bytes
+                image_bytes = base64.b64decode(base64_data)
+                
+                # Upload to Cloudinary
+                upload_result = cloudinary.uploader.upload(
+                    image_bytes,
+                    folder=f"profile_pics/{instance.id}",
+                    public_id=f"profile_{instance.id}",
+                    overwrite=True,
+                    resource_type="image",
+                    transformation=[
+                        {'width': 500, 'height': 500, 'crop': 'fill', 'gravity': 'face'},
+                        {'quality': 'auto:good'},
+                        {'fetch_format': 'auto'}
+                    ]
+                )
+                
+                # Set the Cloudinary URL
+                instance.profile_pic = upload_result['secure_url']
+                
+            except base64.binascii.Error:
+                raise serializers.ValidationError("Invalid base64 encoding")
+            except Exception as e:
+                logger.error(f"Failed to upload profile image for user {instance.id}: {str(e)}")
+                raise serializers.ValidationError(f"Failed to upload image: {str(e)}")
+        
+        instance.save()
+        return instance
     
     def get_has_paid(self, obj):
         """Get payment status for job seekers"""
@@ -244,7 +321,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
                 return {
                     'phone_number': profile.phone_number,
                     'court_name': profile.court_name,
-                    'case_name': profile.case_name,
+                    'case_id': profile.case_id,
                     'resume_completeness': profile.resume_completeness
                 }
             elif obj.user_type == 'employer':
@@ -313,4 +390,29 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
             raise serializers.ValidationError("OTP has expired")
         
         data['user'] = user
+        return data
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    """Serializer for authenticated users to change their password"""
+    old_password = serializers.CharField(write_only=True, required=True)
+    new_password = serializers.CharField(write_only=True, required=True, min_length=8)
+    
+    def validate_old_password(self, value):
+        """Verify that the old password is correct"""
+        user = self.context['request'].user
+        if not user.check_password(value):
+            raise serializers.ValidationError("Old password is incorrect")
+        return value
+    
+    def validate_new_password(self, value):
+        """Ensure new password meets requirements"""
+        if len(value) < 8:
+            raise serializers.ValidationError("Password must be at least 8 characters long")
+        return value
+    
+    def validate(self, data):
+        """Ensure new password is different from old password"""
+        if data['old_password'] == data['new_password']:
+            raise serializers.ValidationError("New password must be different from old password")
         return data

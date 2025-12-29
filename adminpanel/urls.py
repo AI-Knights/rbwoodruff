@@ -15,6 +15,7 @@ urlpatterns = [
     path('agencies/', AgencyListView.as_view(), name='agencies'),
     path('agencies/pending/', PendingAgenciesView.as_view(), name='pending_agencies'),
     path('agencies/<uuid:agency_id>/approve/', ApproveAgencyView.as_view(), name='approve_agency'),
+    path('agencies/<uuid:agency_id>/verify/', ApproveAgencyView.as_view(), name='verify_agency'),  # Alias for consistency
     
     # Employer Verification
     path('employers/', EmployerListView.as_view(), name='employers'),

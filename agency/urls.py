@@ -2,7 +2,8 @@ from django.urls import path
 from .views import (
     AgencyDashboardView, UserRosterView, AssignCaseIDView,
     UserDetailView, UploadUserDocumentView, GenerateReportView,
-    AuditLogListView
+    AuditLogListView, CourtDateCSVUploadView, CourtDateUsersListView,
+    UpdateComplianceStatusView, UserHistoryReportView
 )
 
 
@@ -18,6 +19,12 @@ urlpatterns = [
     
     # Reports
     path('reports/generate/<str:case_id>/', GenerateReportView.as_view(), name='generate_report'),
+    path('reports/user-history/<uuid:user_id>/', UserHistoryReportView.as_view(), name='user_history_report'),
+    
+    # Court Date Management
+    path('court-dates/upload-csv/', CourtDateCSVUploadView.as_view(), name='upload_court_dates'),
+    path('court-dates/users/', CourtDateUsersListView.as_view(), name='court_date_users'),
+    path('court-dates/<uuid:case_id>/status/', UpdateComplianceStatusView.as_view(), name='update_compliance_status'),
     
     # Audit
     path('audit-logs/', AuditLogListView.as_view(), name='audit_logs'),

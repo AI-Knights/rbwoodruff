@@ -24,18 +24,38 @@ class EmployerDashboardView(APIView):
         
         # Calculate stats
         all_jobs = Job.objects.filter(employer=employer_profile)
+        all_applications = JobApplication.objects.filter(job__employer=employer_profile)
+        
+        # Application status counts
+        applied_count = all_applications.filter(status='pending').count()
+        shortlisted_count = all_applications.filter(status='shortlisted').count()
+        rejected_count = all_applications.filter(status='rejected').count()
+        
+        # Top 10 jobs by applicant count
+        top_jobs = all_jobs.annotate(
+            applicant_count=Count('applications')
+        ).order_by('-applicant_count')[:10]
+        
+        top_jobs_data = [
+            {
+                'job_id': str(job.id),
+                'job_title': job.title,
+                'applicant_count': job.applicant_count,
+                'job_status': job.status
+            }
+            for job in top_jobs
+        ]
+        
         stats = {
             'total_jobs_posted': all_jobs.count(),
             'active_jobs': all_jobs.filter(status='active').count(),
-            'total_applicants': JobApplication.objects.filter(job__employer=employer_profile).count(),
-            'hired_candidates': JobApplication.objects.filter(
-                job__employer=employer_profile,
-                status='hired'
-            ).count(),
-            'pending_applications': JobApplication.objects.filter(
-                job__employer=employer_profile,
-                status='pending'
-            ).count()
+            'total_applicants': all_applications.count(),
+            'applied_count': applied_count,
+            'shortlisted_count': shortlisted_count,
+            'rejected_count': rejected_count,
+            'hired_candidates': all_applications.filter(status='hired').count(),
+            'pending_applications': applied_count,  # Same as applied_count for backward compatibility
+            'top_jobs': top_jobs_data
         }
         
         serializer = EmployerDashboardSerializer(stats)

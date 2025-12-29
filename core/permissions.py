@@ -52,14 +52,31 @@ class IsVerifiedEmployer(permissions.BasePermission):
     
     def has_permission(self, request, view):
         if not (request.user and request.user.is_authenticated):
+            self.message = "Authentication required."
             return False
         
         if request.user.user_type != 'employer':
+            self.message = "This action is only available to employer accounts."
             return False
         
         try:
-            return request.user.employer_profile.status == 'verified'
-        except:
+            employer_profile = request.user.employer_profile
+            if employer_profile.status == 'verified':
+                return True
+            elif employer_profile.status == 'pending':
+                self.message = "Your employer account is pending verification. Please wait for admin approval."
+                return False
+            elif employer_profile.status == 'banned':
+                self.message = "Your employer account has been banned. Please contact support for assistance."
+                return False
+            else:
+                self.message = f"Your employer account status is '{employer_profile.status}'. Verification required."
+                return False
+        except AttributeError:
+            self.message = "Employer profile not found. Please complete your employer registration."
+            return False
+        except Exception as e:
+            self.message = "An error occurred while checking your employer status."
             return False
 
 
@@ -80,14 +97,31 @@ class IsVerifiedTrainingProvider(permissions.BasePermission):
     
     def has_permission(self, request, view):
         if not (request.user and request.user.is_authenticated):
+            self.message = "Authentication required."
             return False
         
         if request.user.user_type != 'training_provider':
+            self.message = "This action is only available to training provider accounts."
             return False
         
         try:
-            return request.user.trainer_profile.status == 'verified'
-        except:
+            trainer_profile = request.user.trainer_profile
+            if trainer_profile.status == 'verified':
+                return True
+            elif trainer_profile.status == 'pending':
+                self.message = "Your training provider account is pending verification. Please wait for admin approval."
+                return False
+            elif trainer_profile.status == 'banned':
+                self.message = "Your training provider account has been banned. Please contact support for assistance."
+                return False
+            else:
+                self.message = f"Your training provider account status is '{trainer_profile.status}'. Verification required."
+                return False
+        except AttributeError:
+            self.message = "Training provider profile not found. Please complete your registration."
+            return False
+        except Exception as e:
+            self.message = "An error occurred while checking your training provider status."
             return False
 
 
@@ -107,14 +141,31 @@ class IsVerifiedAgency(permissions.BasePermission):
     
     def has_permission(self, request, view):
         if not (request.user and request.user.is_authenticated):
+            self.message = "Authentication required."
             return False
         
         if request.user.user_type != 'agency':
+            self.message = "This action is only available to agency accounts."
             return False
         
         try:
-            return request.user.agency_profile.status == 'verified'
-        except:
+            agency_profile = request.user.agency_profile
+            if agency_profile.status == 'verified':
+                return True
+            elif agency_profile.status == 'pending':
+                self.message = "Your agency account is pending verification. Please wait for admin approval."
+                return False
+            elif agency_profile.status == 'banned':
+                self.message = "Your agency account has been banned. Please contact support for assistance."
+                return False
+            else:
+                self.message = f"Your agency account status is '{agency_profile.status}'. Verification required."
+                return False
+        except AttributeError:
+            self.message = "Agency profile not found. Please complete your registration."
+            return False
+        except Exception as e:
+            self.message = "An error occurred while checking your agency status."
             return False
 
 

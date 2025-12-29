@@ -11,7 +11,8 @@ from .tokens import CustomRefreshToken
 
 from .serializers import (
     RegisterSerializer, OTPVerifySerializer, LoginSerializer,
-    UserProfileSerializer, PasswordResetRequestSerializer, PasswordResetConfirmSerializer
+    UserProfileSerializer, PasswordResetRequestSerializer, PasswordResetConfirmSerializer,
+    ChangePasswordSerializer
 )
 from .email_service import send_otp_email, send_welcome_email
 from authentication.models import OTP
@@ -93,9 +94,14 @@ class VerifyOTPView(APIView):
         except:
             pass
         
+        # Generate JWT tokens for automatic login
+        refresh = CustomRefreshToken.for_user(user)
+        
         return Response({
             "message": "Email verified successfully. You can now log in.",
-            "email": user.email
+            "email": user.email,
+            "access": str(refresh.access_token),
+            "refresh": str(refresh)
         }, status=status.HTTP_200_OK)
 
 
@@ -142,10 +148,15 @@ class ProfileView(generics.RetrieveUpdateAPIView):
 
 
 class PasswordResetRequestView(APIView):
-    """Request password reset - sends OTP to email"""
+    """Request password reset - sends OTP to email and returns a reset token"""
     permission_classes = [AllowAny]
     
     def post(self, request):
+        import jwt
+        from datetime import timedelta
+        from django.utils import timezone
+        from django.conf import settings
+        
         serializer = PasswordResetRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         
@@ -158,8 +169,19 @@ class PasswordResetRequestView(APIView):
         # Send OTP
         try:
             send_otp_email(user)
+            
+            # Generate JWT token for OTP verification
+            payload = {
+                'user_id': str(user.id),
+                'purpose': 'password_reset',
+                'exp': timezone.now() + timedelta(minutes=15),
+                'iat': timezone.now()
+            }
+            reset_token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
+            
             return Response({
-                "message": "Password reset OTP sent to your email"
+                "message": "Password reset OTP sent to your email",
+                "reset_token": reset_token
             }, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({
@@ -167,24 +189,146 @@ class PasswordResetRequestView(APIView):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class PasswordResetConfirmView(APIView):
-    """Confirm password reset with OTP and set new password"""
+class VerifyResetOtpView(APIView):
+    """Verify OTP for password reset - returns a new token with password hash"""
     permission_classes = [AllowAny]
     
     def post(self, request):
-        serializer = PasswordResetConfirmSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        import jwt
+        import hashlib
+        from datetime import timedelta
+        from django.utils import timezone
+        from django.conf import settings
         
-        user = serializer.validated_data['user']
-        new_password = serializer.validated_data['new_password']
+        reset_token = request.data.get('reset_token')
+        otp = request.data.get('otp')
         
-        # Set new password
-        user.set_password(new_password)
-        user.save()
+        if not reset_token or not otp:
+            return Response({
+                "error": "Reset token and OTP are required"
+            }, status=status.HTTP_400_BAD_REQUEST)
         
-        # Delete all OTPs
-        user.otps.all().delete()
+        try:
+            # Verify the initial reset token
+            payload = jwt.decode(reset_token, settings.SECRET_KEY, algorithms=['HS256'])
+            
+            if payload.get('purpose') != 'password_reset':
+                return Response({
+                    "error": "Invalid token purpose"
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            user = User.objects.get(id=payload['user_id'], is_active=True)
+        except (jwt.PyJWTError, User.DoesNotExist):
+            return Response({
+                "error": "Invalid or expired token"
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Verify OTP
+        try:
+            otp_instance = user.otps.filter(otp=otp).latest('created_at')
+            from core.utils import is_otp_valid
+            
+            if not is_otp_valid(otp_instance):
+                return Response({
+                    "error": "OTP has expired"
+                }, status=status.HTTP_400_BAD_REQUEST)
+        except:
+            return Response({
+                "error": "Invalid OTP"
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+       # Generate password fingerprint for security
+        password_fingerprint = hashlib.sha256(user.password.encode()).hexdigest()[:12]
+        
+        # Create new token with password hash
+        new_payload = {
+            'user_id': str(user.id),
+            'purpose': 'password_reset_confirmed',
+            'security_hash': password_fingerprint,
+            'exp': timezone.now() + timedelta(minutes=15),
+            'iat': timezone.now()
+        }
+        new_reset_token = jwt.encode(new_payload, settings.SECRET_KEY, algorithm='HS256')
+        
+        # Delete the used OTP
+        otp_instance.delete()
         
         return Response({
-            "message": "Password reset successful. You can now log in with your new password."
+            "message": "OTP verified successfully",
+            "reset_token": new_reset_token
+        }, status=status.HTTP_200_OK)
+
+
+class SetNewPasswordView(APIView):
+    """Set new password using verified reset token"""
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        import jwt
+        import hashlib
+        from django.conf import settings
+        
+        reset_token = request.data.get('reset_token')
+        new_password = request.data.get('new_password')
+        
+        if not reset_token or not new_password:
+            return Response({
+                "error": "Reset token and new password are required"
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            # Verify the token
+            payload = jwt.decode(reset_token, settings.SECRET_KEY, algorithms=['HS256'])
+            
+            if payload.get('purpose') != 'password_reset_confirmed':
+                return Response({
+                    "error": "Invalid token purpose"
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            user = User.objects.get(id=payload['user_id'], is_active=True)
+            
+            # Verify password hasn't changed since OTP verification
+            current_fingerprint = hashlib.sha256(user.password.encode()).hexdigest()[:12]
+            token_fingerprint = payload.get('security_hash')
+            
+            if token_fingerprint != current_fingerprint:
+                return Response({
+                    "error": "This reset link has already been used. Please request a new one."
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Set new password
+            user.set_password(new_password)
+            user.save()
+            
+            # Delete all remaining OTPs
+            user.otps.all().delete()
+            
+            return Response({
+                "message": "Password reset successful. You can now log in with your new password."
+            }, status=status.HTTP_200_OK)
+            
+        except (jwt.PyJWTError, User.DoesNotExist):
+            return Response({
+                "error": "Invalid or expired token"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ChangePasswordView(APIView):
+    """Change password for authenticated users"""
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        serializer = ChangePasswordSerializer(
+            data=request.data,
+            context={'request': request}
+        )
+        serializer.is_valid(raise_exception=True)
+        
+        # Set the new password
+        user = request.user
+        user.set_password(serializer.validated_data['new_password'])
+        user.save()
+        
+        return Response({
+            "message": "Password changed successfully"
         }, status=status.HTTP_200_OK)
