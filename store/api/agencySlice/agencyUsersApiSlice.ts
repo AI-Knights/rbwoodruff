@@ -1,6 +1,7 @@
 
 import type { AgencyUsersResponse } from "@/types/agency/user.type";
 import { api } from "../ApiSlice";
+import { ReportResponse } from "@/types/agency/report.type";
 
 export const agencyUsersApiSlice = api.injectEndpoints({
   endpoints: (builder) => ({
@@ -9,7 +10,11 @@ export const agencyUsersApiSlice = api.injectEndpoints({
       providesTags: ["AgencyUser"]
     }),
 
+    getUserReport : builder.query<ReportResponse, string>({
+      query : (id)=> `/agency/reports/user-history/${id}/`
+    })
+
   }),
 });
 
-export const { useGetAgencyUsersQuery } = agencyUsersApiSlice;
+export const { useGetAgencyUsersQuery , useLazyGetUserReportQuery } = agencyUsersApiSlice;

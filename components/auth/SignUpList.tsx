@@ -17,7 +17,7 @@ export default function SignUpList() {
     },
     {
       icon: Trainer,
-      title: "Trainer",
+      title: "Training-Provider",
       path: 'trainer',
       description: "I am looking to offer training programs and share various opportunities.",
 

@@ -47,7 +47,6 @@ const Navbar = ({ onMenuClick }: { onMenuClick?: () => void }) => {
           {/* <Logo /> */}
         </div>
         <div className="w-full">
-          {/* Mobile Menu Button - Only visible on mobile/tablet */}
 
           <h1 className="text-lg md:text-3xl font-semibold text-gray-800">
             {getPageTitle(user?.user_type)}
