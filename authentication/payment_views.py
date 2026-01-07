@@ -123,8 +123,15 @@ class StripeWebhookView(APIView):
             session = event['data']['object']
             
             try:
+                # DEBUG LOGGING
+                print(f"ℹ️ Processing checkout session: {session.get('id')}")
+                print(f"ℹ️ Session object type: {type(session)}")
+                metadata = session.get('metadata', {})
+                print(f"ℹ️ Session Metadata: {metadata}")
+                
                 # Get required fields from session
-                payment_id = session.get('metadata', {}).get('payment_id')
+                payment_id = metadata.get('payment_id')
+                print(f"ℹ️ Extracted payment_id: {payment_id}")
                 
                 if not payment_id:
                     print(f"❌ No payment_id in session metadata")
