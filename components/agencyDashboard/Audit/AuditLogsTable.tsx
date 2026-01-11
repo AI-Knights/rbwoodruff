@@ -30,8 +30,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { useGetCourtDatesQuery, useUpdateCourtDateStatusMutation, useUploadCourtDatesCsvMutation } from "@/store/api/agencySlice/courtDateApiSlice";
-import type { CourtDate, ComplianceStatus } from "@/types/agency/courtDate.type";
+import {
+  useGetCourtDatesQuery,
+  useUpdateCourtDateStatusMutation,
+  useUploadCourtDatesCsvMutation,
+} from "@/store/api/agencySlice/courtDateApiSlice";
+import type {
+  CourtDate,
+  ComplianceStatus,
+} from "@/types/agency/courtDate.type";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -44,13 +51,23 @@ export default function CourtDatesManagementTable() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { data: courtDates = [], isLoading, isError, refetch } = useGetCourtDatesQuery();
-  const [updateStatus, { isLoading: isUpdating }] = useUpdateCourtDateStatusMutation();
-  const [uploadCsv, { isLoading: isUploading }] = useUploadCourtDatesCsvMutation();
+  const {
+    data: courtDates = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useGetCourtDatesQuery();
+  const [updateStatus, { isLoading: isUpdating }] =
+    useUpdateCourtDateStatusMutation();
+  const [uploadCsv, { isLoading: isUploading }] =
+    useUploadCourtDatesCsvMutation();
 
   const totalPages = Math.ceil(courtDates.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const paginatedDates = courtDates.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  const paginatedDates = courtDates.slice(
+    startIndex,
+    startIndex + ITEMS_PER_PAGE
+  );
 
   const handleStatusChange = async () => {
     if (!selectedCase) return;
@@ -65,11 +82,7 @@ export default function CourtDatesManagementTable() {
 
   // Download CSV Template
   const handleCsvDownload = () => {
-    const csvContent = [
-      "case_id,court_date", 
-      ",",
-      ",",
-    ].join("\n");
+    const csvContent = ["case_id,court_date", ",", ","].join("\n");
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -93,11 +106,26 @@ export default function CourtDatesManagementTable() {
 
     try {
       const response = await uploadCsv(formData).unwrap();
-      toast.success(
-        `${response.successful_matches} cases uploaded successfully${
-          response.failed_matches > 0 ? ` (${response.failed_matches} failed)` : ""
-        }`
-      );
+      if (response.failed_matches > 0) {
+        // Show error toast with details
+        const errorMessages = response.failures
+          .map(
+            (failure) =>
+              `Row ${failure.row} (Case ID: ${failure.case_id}): ${failure.error}`
+          )
+          .join("\n");
+
+        toast.error("CSV Upload Errors", {
+          description: `Failed matches: ${response.failed_matches}\n${errorMessages}`,
+          duration: 5000, // Adjust duration as needed
+        });
+      } else {
+        // Optional: Show success toast
+        toast.success("CSV Upload Successful", {
+          description: `All ${response.successful_matches} rows processed successfully.`,
+        });
+      }
+
       refetch();
       setOpenCsvDialog(false);
     } catch (err: any) {
@@ -122,8 +150,14 @@ export default function CourtDatesManagementTable() {
     }
   };
 
-  if (isLoading) return <div className="text-center py-10">Loading court dates...</div>;
-  if (isError) return <div className="text-center py-10 text-red-600">Failed to load court dates</div>;
+  if (isLoading)
+    return <div className="text-center py-10">Loading court dates...</div>;
+  if (isError)
+    return (
+      <div className="text-center py-10 text-red-600">
+        Failed to load court dates
+      </div>
+    );
 
   return (
     <div className="w-full min-h-[calc(100vh-170px)] p-4 md:p-6 lg:p-8">
@@ -148,7 +182,11 @@ export default function CourtDatesManagementTable() {
                 <DialogTitle>Bulk Upload Court Dates</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
-                <Button onClick={handleCsvDownload} variant="outline" className="w-full">
+                <Button
+                  onClick={handleCsvDownload}
+                  variant="outline"
+                  className="w-full"
+                >
                   <Download className="h-4 w-4 mr-2" />
                   Download CSV Template
                 </Button>
@@ -184,7 +222,8 @@ export default function CourtDatesManagementTable() {
                 </Button>
 
                 <p className="text-xs text-gray-500 text-center">
-                  Only CSV files with Case ID and Court Date columns are accepted
+                  Only CSV files with Case ID and Court Date columns are
+                  accepted
                 </p>
               </div>
             </DialogContent>
@@ -211,13 +250,19 @@ export default function CourtDatesManagementTable() {
               <TableBody>
                 {paginatedDates.map((c, index) => (
                   <TableRow key={c.id}>
-                    <TableCell>{index + 1 + (currentPage - 1) * ITEMS_PER_PAGE}</TableCell>
+                    <TableCell>
+                      {index + 1 + (currentPage - 1) * ITEMS_PER_PAGE}
+                    </TableCell>
                     <TableCell className="font-medium">{c.user_name}</TableCell>
                     <TableCell>{c.user_email}</TableCell>
                     <TableCell>{c.case_id}</TableCell>
                     <TableCell>{c.court_name}</TableCell>
-                    <TableCell>{format(new Date(c.court_date), "dd MMM yyyy")}</TableCell>
-                    <TableCell>{format(new Date(c.assigned_date), "dd MMM yyyy")}</TableCell>
+                    <TableCell>
+                      {format(new Date(c.court_date), "dd MMM yyyy")}
+                    </TableCell>
+                    <TableCell>
+                      {format(new Date(c.assigned_date), "dd MMM yyyy")}
+                    </TableCell>
                     <TableCell>
                       <Badge className={getStatusBadge(c.compliance_status)}>
                         {c.compliance_status.replace("_", " ").toUpperCase()}
@@ -268,7 +313,9 @@ export default function CourtDatesManagementTable() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Assigned</span>
-                    <span>{format(new Date(c.assigned_date), "dd MMM yyyy")}</span>
+                    <span>
+                      {format(new Date(c.assigned_date), "dd MMM yyyy")}
+                    </span>
                   </div>
                   <Button
                     variant="outline"
@@ -302,7 +349,9 @@ export default function CourtDatesManagementTable() {
             <Button
               variant="outline"
               size="icon"
-              onClick={() => setCurrentPage((p) => Math.min(totalPages || 1, p + 1))}
+              onClick={() =>
+                setCurrentPage((p) => Math.min(totalPages || 1, p + 1))
+              }
               disabled={currentPage === totalPages}
             >
               <ChevronRight className="h-4 w-4" />
@@ -317,9 +366,13 @@ export default function CourtDatesManagementTable() {
             </DialogHeader>
             <div className="space-y-4">
               <p>
-                Update status for <strong>{selectedCase?.user_name}</strong> ({selectedCase?.case_id})
+                Update status for <strong>{selectedCase?.user_name}</strong> (
+                {selectedCase?.case_id})
               </p>
-              <Select value={newStatus} onValueChange={(v) => setNewStatus(v as ComplianceStatus)}>
+              <Select
+                value={newStatus}
+                onValueChange={(v) => setNewStatus(v as ComplianceStatus)}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -333,7 +386,10 @@ export default function CourtDatesManagementTable() {
               </Select>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setOpenStatusDialog(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setOpenStatusDialog(false)}
+              >
                 Cancel
               </Button>
               <Button onClick={handleStatusChange} disabled={isUpdating}>

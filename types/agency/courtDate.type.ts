@@ -20,5 +20,9 @@ export interface UploadCsvResponse {
   total_rows: number;
   successful_matches: number;
   failed_matches: number;
-  failures: string[];
+  failures: Array<{
+    row: number;
+    case_id: string;
+    error: string;
+  }>;
 }

@@ -1,8 +1,6 @@
 "use client";
-import { usePathname } from "next/navigation";
 import { Bell, CircleCheck, Info, Menu } from "lucide-react";
 import { Button } from "../ui/button";
-import ProfileDropdown from "./ProfileDropdown";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import Link from "next/link";
 import {
@@ -20,7 +18,6 @@ import { decodeToken } from "@/lib/manage_token/decode_token";
 import Logo from "../elements/Logo";
 
 const Navbar = ({ onMenuClick }: { onMenuClick?: () => void }) => {
-  const pathname = usePathname();
   const { data } = useGetProfileInfoQuery()
 
   const token = getToken({ token_name: "access_token" });
