@@ -10,20 +10,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ Checkout code
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 1️⃣ Build Docker image locally on runner
+      # 2️⃣ Build Docker image on GitHub runner
       - name: Build Docker image
         run: |
           docker build -t rbwoodruff-frontend:latest .
 
-      # 2️⃣ Save image to tar file
+      # 3️⃣ Save Docker image to tar
       - name: Save Docker image
         run: |
           docker save rbwoodruff-frontend:latest -o rbwoodruff-frontend.tar
 
-      # 3️⃣ Copy image to server
+      # 4️⃣ Fix permissions (VERY IMPORTANT)
+      - name: Fix image permissions
+        run: |
+          chmod 644 rbwoodruff-frontend.tar
+
+      # 5️⃣ Copy image to server
       - name: Copy image to server
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -33,8 +39,8 @@ jobs:
           source: "rbwoodruff-frontend.tar"
           target: "/root/rbwoodruff_frontend"
 
-      # 4️⃣ SSH into server, load image & deploy
-      - name: Deploy on Server
+      # 6️⃣ SSH into server and deploy
+      - name: Deploy on server
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
