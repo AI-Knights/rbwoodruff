@@ -1,11 +1,9 @@
-name: Manual Deploy Frontend (with version)
+name: Deploy Frontend (hayat)
 
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: "Docker image version (example: 1.0.0)"
-        required: true
+  push:
+    branches:
+      - hayat
 
 jobs:
   build-and-deploy:
@@ -26,9 +24,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/rbwoodruff-frontend:${{ github.event.inputs.version }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/rbwoodruff-frontend:latest
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/rbwoodruff-frontend:latest
 
       - name: Deploy to Server via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -38,8 +34,7 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
             cd /root/rbwoodruff_frontend
-            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/rbwoodruff-frontend:${{ github.event.inputs.version }}
-            docker tag \
-              ${{ secrets.DOCKERHUB_USERNAME }}/rbwoodruff-frontend:${{ github.event.inputs.version }} \
-              ${{ secrets.DOCKERHUB_USERNAME }}/rbwoodruff-frontend:latest
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/rbwoodruff-frontend:latest
+            docker compose down
             docker compose up -d
+########################################
