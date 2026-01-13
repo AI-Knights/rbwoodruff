@@ -1,31 +1,94 @@
-name: Deploy Frontend (hayat)
+#name: Deploy Frontend (hayat)
+#
+#on:
+#  push:
+#    branches:
+#      - hayat
+#
+#jobs:
+#  build-and-deploy:
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#      - name: Checkout code
+#        uses: actions/checkout@v4
+#
+#      - name: Login to DockerHub
+#        uses: docker/login-action@v3
+#        with:
+#          username: ${{ secrets.DOCKERHUB_USERNAME }}
+#          password: ${{ secrets.DOCKERHUB_TOKEN }}
+#
+#      - name: Build and push Docker image
+#        uses: docker/build-push-action@v5
+#        with:
+#          context: .
+#          push: true
+#          tags: ${{ secrets.DOCKERHUB_USERNAME }}/rbwoodruff-frontend:latest
+#
+#      - name: Deploy to Server via SSH
+#        uses: appleboy/ssh-action@v1.0.3
+#        with:
+#          host: ${{ secrets.SERVER_HOST }}
+#          username: ${{ secrets.SERVER_USER }}
+#          key: ${{ secrets.SERVER_SSH_KEY }}
+#          script: |
+#            cd /root/rbwoodruff_frontend
+#            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/rbwoodruff-frontend:latest
+#            docker compose down
+#            docker compose up -d
+#########################################
 
+
+name: Manual Deploy Frontend (with version)
+
+# -----------------------------
+# Trigger: MANUAL ONLY
+# -----------------------------
 on:
-  push:
-    branches:
-      - hayat
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Docker image version (example: 1.0.0)"
+        required: true
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
+      # -----------------------------
+      # 1. Checkout code from repo
+      # -----------------------------
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # -----------------------------
+      # 2. Login to DockerHub
+      # -----------------------------
       - name: Login to DockerHub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      # -----------------------------
+      # 3. Build & Push Docker image
+      #    - Tag with VERSION
+      #    - Also tag as "latest"
+      # -----------------------------
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/rbwoodruff-frontend:latest
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/rbwoodruff-frontend:${{ github.event.inputs.version }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/rbwoodruff-frontend:latest
 
+      # -----------------------------
+      # 4. Deploy on Server via SSH
+      # -----------------------------
       - name: Deploy to Server via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -34,6 +97,18 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
             cd /root/rbwoodruff_frontend
-            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/rbwoodruff-frontend:latest
+
+            echo "Pulling versioned image..."
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/rbwoodruff-frontend:${{ github.event.inputs.version }}
+
+            echo "Tagging version as latest..."
+            docker tag \
+              ${{ secrets.DOCKERHUB_USERNAME }}/rbwoodruff-frontend:${{ github.event.inputs.version }} \
+              ${{ secrets.DOCKERHUB_USERNAME }}/rbwoodruff-frontend:latest
+
+            echo "Restarting frontend container..."
             docker compose down
             docker compose up -d
+
+            echo "Deployment completed successfully"
+
