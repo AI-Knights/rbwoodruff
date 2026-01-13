@@ -4,10 +4,17 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci
+RUN npm install
 
 COPY . .
 RUN npm run build
+
+# Remove development dependencies
+RUN npm prune --production
+
+
+# Remove unnecessary files
+RUN rm -rf .git .github .vscode README.md Dockerfile
 
 # --------- RUN STAGE ----------
 FROM node:20-alpine
