@@ -365,13 +365,11 @@ class UserProfileSerializer(serializers.ModelSerializer):
             if obj.user_type == 'general':
                 profile = obj.general_profile
                 return {
-                    'phone_number': profile.phone_number,
                     'resume_completeness': profile.resume_completeness
                 }
             elif obj.user_type == 'agency_referred':
                 profile = obj.referred_profile
                 return {
-                    'phone_number': profile.phone_number,
                     'court_name': profile.court_name,
                     'case_id': profile.case_id,
                     'resume_completeness': profile.resume_completeness
