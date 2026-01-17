@@ -212,7 +212,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
     has_paid = serializers.SerializerMethodField()
     profile_data = serializers.SerializerMethodField()
     profile_pic = serializers.CharField(required=False, allow_blank=True, allow_null=True)
-    phone_number = serializers.CharField(required=False, allow_blank=True, allow_null=True, max_length=20)
+    phone_number = serializers.SerializerMethodField()
     
     class Meta:
         model = User
@@ -244,18 +244,23 @@ class UserProfileSerializer(serializers.ModelSerializer):
         
         return value
     
-    def validate_phone_number(self, value):
-        """Validate phone number"""
-        if not value:
-            return value
-        
-        # Basic validation: ensure it's not empty after stripping whitespace
-        if isinstance(value, str):
-            value = value.strip()
-            if not value:
-                raise serializers.ValidationError("Phone number cannot be empty")
-        
-        return value
+    def to_internal_value(self, data):
+        """Handle phone_number from input data for updates"""
+        # Extract phone_number before validation since it's a SerializerMethodField
+        self._phone_number_input = data.get('phone_number')
+        return super().to_internal_value(data)
+    
+    def validate(self, data):
+        """Validate phone_number from input"""
+        # Add phone_number validation if it was provided in input
+        if hasattr(self, '_phone_number_input') and self._phone_number_input is not None:
+            phone_number = self._phone_number_input
+            if isinstance(phone_number, str):
+                phone_number = phone_number.strip()
+                if not phone_number:
+                    raise serializers.ValidationError({"phone_number": "Phone number cannot be empty"})
+            data['phone_number'] = phone_number
+        return data
     
     def update(self, instance, validated_data):
         """Handle profile update with base64 image upload to Cloudinary"""
@@ -340,6 +345,19 @@ class UserProfileSerializer(serializers.ModelSerializer):
                 return None
         except:
             return False
+    
+    def get_phone_number(self, obj):
+        """Get phone number from user's profile"""
+        try:
+            if obj.user_type == 'general':
+                return obj.general_profile.phone_number
+            elif obj.user_type == 'agency_referred':
+                return obj.referred_profile.phone_number
+            else:
+                # Other user types don't have phone numbers
+                return None
+        except:
+            return None
     
     def get_profile_data(self, obj):
         """Get user type specific profile information"""
