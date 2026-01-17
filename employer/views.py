@@ -181,28 +181,90 @@ class ApplicantDetailView(APIView):
 
 
 class UpdateApplicationStatusView(APIView):
-    """Update application status (shortlist, hire, reject)"""
+    """Enhanced application status update with emails and status-specific handling"""
     permission_classes = [IsAuthenticated, IsEmployer]
     
     def patch(self, request, application_id):
+        # Get and verify application
         application = get_object_or_404(
             JobApplication,
             id=application_id,
             job__employer=request.user.employer_profile
         )
         
-        new_status = request.data.get('status')
-        employer_notes = request.data.get('employer_notes', '')
-        
-        if new_status not in ['shortlisted', 'rejected', 'hired', 'interview_scheduled', 'offer_received']:
+        # Validate request data
+        from employer.serializers import EnhancedApplicationStatusSerializer
+        serializer = EnhancedApplicationStatusSerializer(data=request.data)
+        if not serializer.is_valid():
             return Response({
-                'error': 'Invalid status'
+                'error': 'Invalid request data',
+                'details': serializer.errors
             }, status=status.HTTP_400_BAD_REQUEST)
         
+        validated_data = serializer.validated_data
+        new_status = validated_data['status']
+        employer_notes = validated_data.get('employer_notes', '')
+        
+        # Update application status and notes
         application.status = new_status
         if employer_notes:
             application.employer_notes = employer_notes
         application.save()
+        
+        # Handle status-specific actions
+        try:
+            if new_status == 'rejected':
+                # Send rejection email
+                from authentication.email_service import send_rejection_email
+                send_rejection_email(
+                    applicant=application.applicant,
+                    job=application.job,
+                    employer=request.user.employer_profile
+                )
+            
+            elif new_status == 'hired':
+                # Send hiring email with details
+                from authentication.email_service import send_hiring_email
+                hiring_details = {
+                    'start_date': validated_data.get('start_date'),
+                    'joining_time': validated_data.get('joining_time'),
+                    'hiring_notes': validated_data.get('hiring_notes', '')
+                }
+                send_hiring_email(
+                    applicant=application.applicant,
+                    job=application.job,
+                    employer=request.user.employer_profile,
+                    hiring_details=hiring_details
+                )
+            
+            elif new_status == 'interview_scheduled':
+                # Create Interview object
+                from users.models import Interview
+                interview_data = {
+                    'application': application,
+                    'scheduled_date': validated_data['scheduled_date'],
+                    'scheduled_time': validated_data['scheduled_time'],
+                    'duration_minutes': validated_data.get('duration_minutes', 30),
+                    'meeting_link': validated_data.get('meeting_link', ''),
+                    'location': validated_data.get('location', ''),
+                    'notes': validated_data.get('interview_notes', '')
+                }
+                interview = Interview.objects.create(**interview_data)
+                
+                # Send interview invitation email
+                from authentication.email_service import send_interview_invitation_email
+                send_interview_invitation_email(
+                    applicant=application.applicant,
+                    job=application.job,
+                    employer=request.user.employer_profile,
+                    interview=interview
+                )
+        
+        except Exception as e:
+            # Log error but don't fail the request
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to send email or create interview: {str(e)}")
         
         serializer = ApplicantSerializer(application)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -225,11 +287,26 @@ class ScheduleInterviewView(generics.CreateAPIView):
         
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        interview = serializer.save()
         
         # Update application status
         application.status = 'interview_scheduled'
         application.save()
+        
+        # Send email notification to applicant
+        try:
+            from authentication.email_service import send_interview_invitation_email
+            send_interview_invitation_email(
+                applicant=application.applicant,
+                job=application.job,
+                employer=request.user.employer_profile,
+                interview=interview
+            )
+        except Exception as e:
+            # Log error but don't fail the request
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to send interview invitation email: {str(e)}")
         
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 

@@ -14,6 +14,7 @@ User = get_user_model()
 # Job related serializers
 class JobSerializer(serializers.ModelSerializer):
     employer_name = serializers.CharField(source='employer.company_name', read_only=True)
+    has_applied = serializers.SerializerMethodField()
     
     class Meta:
         model = Job
@@ -21,9 +22,20 @@ class JobSerializer(serializers.ModelSerializer):
             'id', 'employer', 'employer_name', 'title', 'category', 'description',
             'requirements', 'employment_type', 'location', 'is_remote',
             'salary_min', 'salary_max', 'skills_required', 'deadline',
-            'status', 'created_at'
+            'status', 'created_at', 'has_applied'
         ]
-        read_only_fields = ['id', 'employer', 'created_at']
+        read_only_fields = ['id', 'employer', 'created_at', 'has_applied']
+    
+    def get_has_applied(self, obj):
+        """Check if the current user has already applied to this job"""
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return JobApplication.objects.filter(
+                job=obj,
+                applicant=request.user
+            ).exists()
+        return False
+
 
 
 class JobApplicationSerializer(serializers.ModelSerializer):
@@ -71,18 +83,40 @@ class EnrollmentSerializer(serializers.ModelSerializer):
     program_name = serializers.CharField(source='program.name', read_only=True)
     provider_name = serializers.CharField(source='program.provider.user.full_name', read_only=True)
     
+    external_link = serializers.URLField(source='program.external_link', read_only=True)
+    certificate_url = serializers.SerializerMethodField()
+    certificate_status = serializers.SerializerMethodField()
+    
     class Meta:
         model = Enrollment
         fields = [
-            'id', 'program', 'program_name', 'provider_name', 'user',
+            'id', 'program', 'program_name', 'provider_name', 'external_link', 'user',
             'status', 'progress_percentage', 'start_date', 'completion_date',
-            'created_at'
+            'certificate_url', 'certificate_status', 'created_at'
         ]
         read_only_fields = ['id', 'user', 'start_date', 'created_at']
+    
+    def get_certificate_url(self, obj):
+        """Return certificate file URL if exists, otherwise None"""
+        try:
+            certificate = Certificate.objects.get(enrollment=obj)
+            return certificate.certificate_file.url if certificate.certificate_file else None
+        except Certificate.DoesNotExist:
+            return None
+    
+    def get_certificate_status(self, obj):
+        """Return certificate verification status if exists, otherwise None"""
+        try:
+            certificate = Certificate.objects.get(enrollment=obj)
+            return certificate.verification_status
+        except Certificate.DoesNotExist:
+            return None
+
 
 
 class CertificateSerializer(serializers.ModelSerializer):
     program_name = serializers.CharField(source='enrollment.program.name', read_only=True)
+    certificate_file = serializers.SerializerMethodField()
     
     class Meta:
         model = Certificate
@@ -92,6 +126,13 @@ class CertificateSerializer(serializers.ModelSerializer):
             'verified_by', 'rejection_reason'
         ]
         read_only_fields = ['id', 'uploaded_at', 'verified_at', 'verified_by']
+    
+    def get_certificate_file(self, obj):
+        """Return full Cloudinary URL for certificate file"""
+        if obj.certificate_file:
+            return obj.certificate_file.url
+        return None
+
 
 
 # Resume related serializers
@@ -142,7 +183,7 @@ class ResumeSerializer(serializers.ModelSerializer):
         model = Resume
         fields = [
             'id', 'user', 'summary', 'phone', 'linkedin_url',
-            'portfolio_url', 'completeness_percentage', 'work_experiences',
+            'portfolio_url', 'resume_pdf_url', 'completeness_percentage', 'work_experiences',
             'education_entries', 'skills', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'user', 'completeness_percentage', 'created_at', 'updated_at']
@@ -171,7 +212,7 @@ class ContactMessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ContactMessage
         fields = [
-            'id', 'user', 'name', 'email', 'subject', 'message',
+            'id', 'user', 'name', 'email', 'phone', 'subject', 'message',
             'status', 'admin_response', 'created_at'
         ]
         read_only_fields = ['id', 'user', 'status', 'admin_response', 'created_at']
@@ -180,26 +221,12 @@ class ContactMessageSerializer(serializers.ModelSerializer):
 # Dashboard serializer
 class DashboardStatsSerializer(serializers.Serializer):
     live_jobs = serializers.IntegerField()
-    active_trainings = serializers.IntegerField()
+    trainers_count = serializers.IntegerField()
+    total_trainings = serializers.IntegerField()
     certificates_earned = serializers.IntegerField()
-    total_applications = serializers.IntegerField()
-    pending_interviews = serializers.IntegerField()
-    saved_jobs_count = serializers.IntegerField()
-    resume_completeness = serializers.IntegerField()
 
 
-# AI Career Analysis serializers
-class WorkHistoryInputSerializer(serializers.Serializer):
-    """Serializer for work history input in career analysis request."""
-    job_title = serializers.CharField(max_length=200)
-    company_name = serializers.CharField(max_length=200)
-    location = serializers.CharField(max_length=200)
-    start_date = serializers.DateField()
-    end_date = serializers.DateField(required=False, allow_null=True)
-    currently_employed = serializers.BooleanField(default=False)
-    responsibilities = serializers.CharField(allow_blank=True)
-
-
+# AI Career Analysis serializers (New Version - Job & Training Recommendations)
 class QuizDataSerializer(serializers.Serializer):
     """Serializer for quiz data input."""
     interests = serializers.CharField(max_length=500)
@@ -210,44 +237,44 @@ class QuizDataSerializer(serializers.Serializer):
     location = serializers.CharField(max_length=200)
 
 
-class CareerAnalysisRequestSerializer(serializers.Serializer):
-    """Main request serializer for career analysis."""
+class CareerRecommendationRequestSerializer(serializers.Serializer):
+    """Simplified request serializer - only quiz data needed"""
     quiz_data = QuizDataSerializer()
-    work_history = WorkHistoryInputSerializer(many=True)
-    public_id = serializers.CharField(max_length=500)
-    url = serializers.URLField()
 
 
-class SectionStatusSerializer(serializers.Serializer):
-    """Serializer for resume section status."""
-    personal_info = serializers.CharField()
-    education = serializers.CharField()
-    work_experience = serializers.CharField()
-    skills = serializers.CharField()
-
-
-class ResumeAnalysisSerializer(serializers.Serializer):
-    """Serializer for resume analysis results."""
-    completeness_score = serializers.IntegerField(min_value=0, max_value=100)
-    section_status = SectionStatusSerializer()
-    suggestions = serializers.ListField(child=serializers.CharField())
-
-
-class CareerRecommendationSerializer(serializers.Serializer):
-    """Serializer for individual career recommendation"""
-    category_id = serializers.UUIDField(required=False, allow_null=True)
-    title = serializers.CharField(max_length=200)
+class JobRecommendationSerializer(serializers.Serializer):
+    """Serializer for recommended jobs"""
+    id = serializers.UUIDField()
+    title = serializers.CharField()
+    company_name = serializers.CharField()
     description = serializers.CharField()
-    training_duration = serializers.CharField(max_length=100)
-    match_type = serializers.ChoiceField(choices=['primary', 'alternative'])
+    location = serializers.CharField()
+    employment_type = serializers.CharField()
+    salary_min = serializers.DecimalField(max_digits=10, decimal_places=2, allow_null=True)
+    salary_max = serializers.DecimalField(max_digits=10, decimal_places=2, allow_null=True)
+    skills_required = serializers.ListField(child=serializers.CharField())
+    is_remote = serializers.BooleanField()
+    match_reason = serializers.CharField()
 
 
-class CareerAnalysisResponseSerializer(serializers.Serializer):
-    """Main response serializer for career analysis."""
-    resume_analysis = ResumeAnalysisSerializer()
-    career_recommendations = CareerRecommendationSerializer(many=True)
-    resume_pdf_url = serializers.URLField(required=False, allow_null=True)
-    resume_public_id = serializers.CharField(required=False, allow_null=True)
+class TrainingRecommendationSerializer(serializers.Serializer):
+    """Serializer for recommended training programs"""
+    id = serializers.UUIDField()
+    name = serializers.CharField()
+    description = serializers.CharField()
+    provider_name = serializers.CharField()
+    category = serializers.CharField(allow_null=True)
+    duration = serializers.IntegerField()
+    duration_unit = serializers.CharField()
+    external_link = serializers.URLField()
+    match_reason = serializers.CharField()
+
+
+class CareerRecommendationResponseSerializer(serializers.Serializer):
+    """Response serializer with job and training recommendations"""
+    recommended_jobs = JobRecommendationSerializer(many=True)
+    recommended_trainings = TrainingRecommendationSerializer(many=True)
+
 
 
 

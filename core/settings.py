@@ -11,7 +11,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 env = environ.Env()
-environ.Env.read_env()
+environ.Env.read_env(BASE_DIR / '.env')
 
 
 
@@ -198,7 +198,7 @@ CORS_ALLOW_HEADERS = [
 ]
 
 ALLOWED_HOSTS = ["*"]
-CSRF_TRUSTED_ORIGINS = ['https://rbwoodroff.projectyard.top']
+CSRF_TRUSTED_ORIGINS = ['https://api.neworkx.com']
 
 
 

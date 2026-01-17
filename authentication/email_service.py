@@ -131,3 +131,197 @@ def send_welcome_email(user):
         [user.email],
         fail_silently=False,
     )
+
+
+def send_interview_invitation_email(applicant, job, employer, interview):
+    """Send interview invitation email to applicant"""
+    
+    # Format date and time
+    interview_date = interview.scheduled_date.strftime('%A, %B %d, %Y')
+    interview_time = interview.scheduled_time.strftime('%I:%M %p')
+    
+    # Build meeting details
+    meeting_details = ""
+    if interview.meeting_link:
+        meeting_details = f"Meeting Link: {interview.meeting_link}"
+    elif interview.location:
+        meeting_details = f"Location: {interview.location}"
+    else:
+        meeting_details = "Meeting details will be shared separately."
+    
+    subject = f'Interview Invitation - {job.title} at {employer.company_name}'
+    message = f'''
+    Hello {applicant.full_name},
+    
+    Great news! You have been invited for an interview for the position of {job.title} at {employer.company_name}.
+    
+    JOB DETAILS:
+    • Position: {job.title}
+    • Company: {employer.company_name}
+    • Location: {job.location}
+    • Employment Type: {job.get_employment_type_display()}
+    
+    INTERVIEW DETAILS:
+    • Date: {interview_date}
+    • Time: {interview_time}
+    • Duration: {interview.duration_minutes} minutes
+    • {meeting_details}
+    
+    {f"Additional Notes: {interview.notes}" if interview.notes else ""}
+    
+    Please make sure you are available at the scheduled time. If you have any questions or need to reschedule, please contact the employer.
+    
+    We wish you the best of luck with your interview!
+    
+    Best regards,
+    Neworkx Team
+    '''
+    
+    send_mail(
+        subject,
+        message,
+        settings.DEFAULT_FROM_EMAIL,
+        [applicant.email],
+        fail_silently=False,
+    )
+
+
+def send_rejection_email(applicant, job, employer):
+    """Send application rejection email to applicant"""
+    
+    subject = f'Application Update - {job.title} at {employer.company_name}'
+    message = f'''
+    Hello {applicant.full_name},
+    
+    Thank you for your interest in the {job.title} position at {employer.company_name}.
+    
+    After careful consideration, we have decided to move forward with other candidates whose qualifications more closely match our current needs.
+    
+    JOB DETAILS:
+    • Position: {job.title}
+    • Company: {employer.company_name}
+    • Location: {job.location}
+    
+    We appreciate the time you invested in applying and wish you the best in your job search. We encourage you to apply for future openings that match your skills and experience.
+    
+    Best regards,
+    {employer.company_name} Team
+    Neworkx
+    '''
+    
+    send_mail(
+        subject,
+        message,
+        settings.DEFAULT_FROM_EMAIL,
+        [applicant.email],
+        fail_silently=False,
+    )
+
+
+def send_hiring_email(applicant, job, employer, hiring_details):
+    """Send hiring congratulations email to applicant"""
+    
+    start_date = hiring_details.get('start_date', 'TBD')
+    joining_time = hiring_details.get('joining_time', '')
+    hiring_notes = hiring_details.get('hiring_notes', '')
+    
+    # Format date if provided
+    if start_date != 'TBD':
+        start_date = start_date.strftime('%A, %B %d, %Y')
+    
+    # Format time if provided
+    time_info = f" at {joining_time.strftime('%I:%M %p')}" if joining_time else ""
+    
+    # Format salary info if available
+    salary_info = ""
+    if job.salary_min and job.salary_max:
+        salary_info = f"• Salary Range: ${job.salary_min} - ${job.salary_max}"
+    
+    # Format additional info
+    additional_info = ""
+    if hiring_notes:
+        additional_info = "ADDITIONAL INFORMATION:\n    " + hiring_notes + "\n    \n    "
+    
+    subject = f'Congratulations! You\'re Hired - {job.title} at {employer.company_name}'
+    message = f'''
+    Hello {applicant.full_name},
+    
+    Congratulations! We are pleased to offer you the position of {job.title} at {employer.company_name}.
+    
+    JOB DETAILS:
+    • Position: {job.title}
+    • Company: {employer.company_name}
+    • Location: {job.location}
+    • Employment Type: {job.get_employment_type_display()}
+    {salary_info}
+    
+    START DATE:
+    • Date: {start_date}{time_info}
+    
+    {additional_info}We are excited to have you join our team! Please reach out if you have any questions.
+    
+    Welcome aboard!
+    
+    Best regards,
+    {employer.company_name} Team
+    Neworkx
+    '''
+    
+    send_mail(
+        subject,
+        message,
+        settings.DEFAULT_FROM_EMAIL,
+        [applicant.email],
+        fail_silently=False,
+    )
+
+
+def send_contact_form_to_admin(contact_message):
+    """Send contact form submission notification to admin"""
+    
+    # Determine sender info
+    if contact_message.user:
+        sender_name = contact_message.user.full_name
+        sender_email = contact_message.user.email
+    else:
+        sender_name = contact_message.name
+        sender_email = contact_message.email
+    
+    # Format phone info
+    phone_info = f"Phone: {contact_message.phone}" if contact_message.phone else "Phone: Not provided"
+    
+    # Format subject info
+    subject_info = contact_message.subject if contact_message.subject else "No subject provided"
+    
+    subject = f'New Contact Form Submission from {sender_name}'
+    message = f'''
+    New Contact Form Submission
+    
+    FROM:
+    • Name: {sender_name}
+    • Email: {sender_email}
+    • {phone_info}
+    
+    SUBJECT:
+    {subject_info}
+    
+    MESSAGE:
+    {contact_message.message}
+    
+    ---
+    Submission ID: {contact_message.id}
+    Submitted at: {contact_message.created_at.strftime('%Y-%m-%d %H:%M:%S')}
+    
+    This message was sent via the Neworkx contact form.
+    '''
+    
+    # Admin email
+    admin_email = 'rbwoodruff@neworkx.com'
+    
+    send_mail(
+        subject,
+        message,
+        settings.DEFAULT_FROM_EMAIL,
+        [admin_email],
+        fail_silently=False,
+    )

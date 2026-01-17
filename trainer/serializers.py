@@ -27,7 +27,10 @@ class LearnerSerializer(serializers.ModelSerializer):
     learner_name = serializers.CharField(source='user.full_name', read_only=True)
     learner_email = serializers.CharField(source='user.email', read_only=True)
     program_name = serializers.CharField(source='program.name', read_only=True)
-    has_certificate = serializers.SerializerMethodField()
+    certificate_id = serializers.SerializerMethodField()
+    certificate_url = serializers.SerializerMethodField()
+    certificate_status = serializers.SerializerMethodField()
+    rejection_reason = serializers.SerializerMethodField()
     resume_url = serializers.SerializerMethodField()
     
     class Meta:
@@ -35,11 +38,41 @@ class LearnerSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'user', 'learner_name', 'learner_email', 'program',
             'program_name', 'status', 'progress_percentage',
-            'start_date', 'completion_date', 'has_certificate', 'resume_url'
+            'start_date', 'completion_date', 'certificate_id', 'certificate_url',
+            'certificate_status', 'rejection_reason', 'resume_url'
         ]
     
-    def get_has_certificate(self, obj):
-        return Certificate.objects.filter(enrollment=obj).exists()
+    def get_certificate_id(self, obj):
+        """Return certificate ID if exists, otherwise None"""
+        try:
+            certificate = Certificate.objects.get(enrollment=obj)
+            return certificate.id
+        except Certificate.DoesNotExist:
+            return None
+    
+    def get_certificate_url(self, obj):
+        """Return certificate file URL if exists, otherwise None"""
+        try:
+            certificate = Certificate.objects.get(enrollment=obj)
+            return certificate.certificate_file.url if certificate.certificate_file else None
+        except Certificate.DoesNotExist:
+            return None
+    
+    def get_certificate_status(self, obj):
+        """Return certificate verification status if exists, otherwise None"""
+        try:
+            certificate = Certificate.objects.get(enrollment=obj)
+            return certificate.verification_status
+        except Certificate.DoesNotExist:
+            return None
+    
+    def get_rejection_reason(self, obj):
+        """Return rejection reason if certificate was rejected, otherwise None"""
+        try:
+            certificate = Certificate.objects.get(enrollment=obj)
+            return certificate.rejection_reason if certificate.rejection_reason else None
+        except Certificate.DoesNotExist:
+            return None
     
     def get_resume_url(self, obj):
         """Return resume PDF URL if available, otherwise null"""
@@ -48,6 +81,7 @@ class LearnerSerializer(serializers.ModelSerializer):
             return resume.resume_pdf_url if resume.resume_pdf_url else None
         except:
             return None
+
 
 
 class CertificateVerificationSerializer(serializers.ModelSerializer):

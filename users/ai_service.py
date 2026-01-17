@@ -169,7 +169,11 @@ class CareerAnalyzer:
                         "role": "system",
                         "content": (
                             "You are an expert career counselor and resume analyst. "
-                            "Analyze the provided resume text along with quiz data and work history. "
+                            "Your primary goal is to provide ACCURATE and HELPFUL analysis. "
+                            "When evaluating resumes, be thorough in reading ALL content before judging completeness. "
+                            "Do NOT mark sections as incomplete unless they are truly missing or severely lacking. "
+                            "If a section has reasonable content, mark it as complete. "
+                            "Provide specific, actionable suggestions based on what you actually observe in the resume. "
                             "Return ONLY a valid JSON response with resume analysis and career recommendations. "
                             "Do not include any explanatory text outside the JSON."
                         )
@@ -192,6 +196,83 @@ class CareerAnalyzer:
             
         except Exception as e:
             raise Exception(f"OpenAI API error: {str(e)}")
+    
+    def analyze_career_path_from_image(
+        self,
+        quiz_data: Dict[str, str],
+        work_history: List[Dict[str, Any]],
+        image_url: str
+    ) -> Dict[str, Any]:
+        """
+        Analyze user data and resume IMAGE to provide career recommendations.
+        Uses GPT-4o Vision to read resume directly from image.
+        
+        Args:
+            quiz_data: User's quiz responses (interests, work environment, etc.)
+            work_history: List of work history entries
+            image_url: URL to the resume image (JPG, PNG, etc.)
+            
+        Returns:
+            Structured career analysis with resume score and recommendations
+        """
+        # Build the analysis prompt (same as text version)
+        prompt = self._build_analysis_prompt(quiz_data, work_history, "")
+        
+        # Modify prompt to work with vision
+        vision_prompt = prompt.replace(
+            "**Resume Text:**\n",
+            "**Resume Image:**\nPlease carefully read ALL text visible in the resume image provided. "
+            "Extract and analyze all information including personal details, education, work experience, and skills.\n\n"
+        )
+        
+        try:
+            # Call OpenAI API with vision (gpt-4o supports images)
+            response = self.client.chat.completions.create(
+                model="gpt-4o",  # Must use gpt-4o or gpt-4o-mini for vision
+                messages=[
+                    {
+                        "role": "system",
+                        "content": (
+                            "You are an expert career counselor and resume analyst. "
+                            "Your primary goal is to provide ACCURATE and HELPFUL analysis. "
+                            "When evaluating resumes, be thorough in reading ALL content visible in the image before judging completeness. "
+                            "Do NOT mark sections as incomplete unless they are truly missing or severely lacking. "
+                            "If a section has reasonable content, mark it as complete. "
+                            "Provide specific, actionable suggestions based on what you actually observe in the resume. "
+                            "Return ONLY a valid JSON response with resume analysis and career recommendations. "
+                            "Do not include any explanatory text outside the JSON."
+                        )
+                    },
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": vision_prompt
+                            },
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": image_url,
+                                    "detail": "high"  # High detail for better text recognition
+                                }
+                            }
+                        ]
+                    }
+                ],
+                temperature=0.7,
+                max_tokens=2000,
+                response_format={"type": "json_object"}
+            )
+            
+            # Parse the response
+            result = json.loads(response.choices[0].message.content)
+            
+            # Validate and structure the response
+            return self._structure_response(result)
+            
+        except Exception as e:
+            raise Exception(f"OpenAI Vision API error: {str(e)}")
     
     def _build_analysis_prompt(
         self,
@@ -254,6 +335,43 @@ CRITICAL INSTRUCTIONS FOR CAREER RECOMMENDATIONS:
 4. Choose 1 primary and 2 alternative categories based on user's profile
 
 **Instructions:**
+CRITICAL: BE ACCURATE! This resume will be evaluated for completeness. Do NOT mark sections as incomplete unless they are truly missing or severely lacking content.
+
+COMPLETENESS EVALUATION CRITERIA:
+
+1. **Personal Info** - Mark as "complete" if the resume contains AT LEAST THREE of:
+   - Full name
+   - Phone number OR email address
+   - LinkedIn, GitHub, or portfolio URL
+   - Location/Address
+   
+2. **Education** - Mark as "complete" if it has AT LEAST ONE of:
+   - University/College name AND degree/major
+   - High school with graduation year
+   - Any formal educational institution listed
+   
+3. **Work Experience** - Mark as "complete" if it has AT LEAST ONE of:
+   - Job title AND company name
+   - Internship with company/organization
+   - Project work with dates
+   - Volunteer experience
+   
+4. **Skills** - Mark as "complete" if it lists AT LEAST THREE items that could be:
+   - Programming languages
+   - Technical tools
+   - Soft skills
+   - Frameworks/technologies
+   - Languages spoken
+
+COMPLETENESS SCORE GUIDELINES:
+- 90-100: Excellent resume with all sections complete and well-detailed
+- 70-89: Good resume with all major sections present
+- 50-69: Adequate resume with some sections needing improvement
+- 30-49: Basic resume with multiple sections incomplete
+- 0-29: Very incomplete resume missing most sections
+
+BE GENEROUS: If a resume has reasonable content in a section, mark it as "complete". Only mark as "incomplete" if the section is truly missing or has minimal/placeholder content.
+
 Provide a JSON response with the following structure:
 
 {{
@@ -290,9 +408,9 @@ Provide a JSON response with the following structure:
 }}
 
 **Guidelines:**
-1. Completeness score should reflect how complete the resume is (personal info, education, work experience, skills)
-2. Provide 3-5 actionable suggestions to improve the resume
-3. Recommend 3-5 career paths based on quiz responses, work history, and resume
+1. ACCURATELY assess completeness based on what's ACTUALLY in the resume text above
+2. Only provide suggestions for sections that are truly incomplete or could be meaningfully improved
+3. Recommend 3-5 career paths based on the user's actual skills and experience shown in the resume
 4. Mark the top match as "primary" and others as "alternative"
 5. Training duration should align with their stated training flexibility
 6. Consider their job priorities (salary, work-life balance, etc.) in recommendations
@@ -351,12 +469,12 @@ def analyze_career_data(
     """
     Main function to analyze career data and provide recommendations.
     
-    Uses production-grade text extraction for optimal speed and cost.
+    Supports both PDF files and images (JPG, PNG) of resumes.
     
     Args:
         quiz_data: User's quiz responses
         work_history: User's work history
-        pdf_url: Cloudinary URL of the PDF resume
+        pdf_url: Cloudinary URL of the resume (PDF or image)
         
     Returns:
         Structured analysis with resume score and career recommendations
@@ -364,12 +482,313 @@ def analyze_career_data(
     Raises:
         Exception: If any step of the analysis fails
     """
-    # Step 1: Download and extract text from PDF (fast and accurate)
-    pdf_parser = PDFParser()
-    resume_text = pdf_parser.download_and_extract_text(pdf_url)
+    # Check if the URL is an image or PDF
+    url_lower = pdf_url.lower()
+    is_image = url_lower.endswith(('.jpg', '.jpeg', '.png', '.webp'))
     
-    # Step 2: Analyze with GPT-4o using text
     analyzer = CareerAnalyzer()
-    analysis_result = analyzer.analyze_career_path(quiz_data, work_history, resume_text)
+    
+    if is_image:
+        # Use GPT-4o Vision to analyze image directly
+        print(f"📸 Detected image resume: {pdf_url}")
+        analysis_result = analyzer.analyze_career_path_from_image(quiz_data, work_history, pdf_url)
+    else:
+        # Extract text from PDF first, then analyze
+        print(f"📄 Detected PDF resume: {pdf_url}")
+        pdf_parser = PDFParser()
+        resume_text = pdf_parser.download_and_extract_text(pdf_url)
+        analysis_result = analyzer.analyze_career_path(quiz_data, work_history, resume_text)
     
     return analysis_result
+
+
+
+
+def _validate_quiz_data(quiz_data: Dict[str, str]) -> None:
+    """
+    Validate quiz_data has required fields.
+    
+    Raises:
+        ValueError: If quiz_data is invalid
+    """
+    required_fields = ['interests', 'work_environment', 'training_flexibility', 
+                      'strengths', 'job_priorities', 'location']
+    
+    if not quiz_data:
+        raise ValueError("quiz_data is required")
+    
+    for field in required_fields:
+        if field not in quiz_data:
+            raise ValueError(f"Missing required field: {field}")
+        
+        # Check that values aren't empty
+        if not quiz_data[field] or not str(quiz_data[field]).strip():
+            raise ValueError(f"Field '{field}' cannot be empty")
+
+
+# New service for job and training recommendations
+def recommend_jobs_and_trainings(quiz_data: Dict[str, str]) -> Dict[str, Any]:
+    """
+    Recommend jobs and training programs based on quiz data.
+    
+    Args:
+        quiz_data: User's quiz responses (interests, work environment, etc.)
+        
+    Returns:
+        Dictionary with recommended_jobs and recommended_trainings lists
+        
+    Raises:
+        ValueError: If quiz_data is invalid
+        Exception: If AI analysis fails
+    """
+    # Step 0: Validate input data
+    _validate_quiz_data(quiz_data)
+    
+    # Step 1: Fetch limited active jobs from database (only top 50)
+    jobs_data = _get_active_jobs(limit=50)
+    
+    # Step 2: Fetch limited active training programs (only top 30)
+    trainings_data = _get_active_trainings(limit=30)
+    
+    # Step 3: Handle empty data gracefully
+    if not jobs_data and not trainings_data:
+        return {
+            'recommended_jobs': [],
+            'recommended_trainings': []
+        }
+    
+    # Step 4: Use AI to analyze and recommend (AI returns minimal data with IDs)
+    recommendations = _analyze_with_ai(quiz_data, jobs_data, trainings_data)
+    
+    # Step 5: Enrich AI response with full job/training data
+    enriched_recommendations = _enrich_recommendations(recommendations, jobs_data, trainings_data)
+    
+    return enriched_recommendations
+
+
+def _enrich_recommendations(
+    ai_response: Dict[str, Any],
+    jobs_data: List[Dict[str, Any]],
+    trainings_data: List[Dict[str, Any]]
+) -> Dict[str, Any]:
+    """
+    Enrich AI response with full job and training data.
+    AI returns minimal data with IDs and match_reason.
+    We look up the full data from our original lists.
+    """
+    # Create lookup dictionaries for fast access
+    jobs_lookup = {job['id']: job for job in jobs_data}
+    trainings_lookup = {training['id']: training for training in trainings_data}
+    
+    enriched_jobs = []
+    for ai_job in ai_response.get('recommended_jobs', []):
+        job_id = ai_job.get('id')
+        if job_id and job_id in jobs_lookup:
+            # Get full job data from our original list
+            full_job = jobs_lookup[job_id].copy()
+            # Add AI's match_reason
+            full_job['match_reason'] = ai_job.get('match_reason', 'Good match for your profile')
+            enriched_jobs.append(full_job)
+    
+    enriched_trainings = []
+    for ai_training in ai_response.get('recommended_trainings', []):
+        training_id = ai_training.get('id')
+        if training_id and training_id in trainings_lookup:
+            # Get full training data from our original list
+            full_training = trainings_lookup[training_id].copy()
+            # Add AI's match_reason
+            full_training['match_reason'] = ai_training.get('match_reason', 'Good match for your profile')
+            enriched_trainings.append(full_training)
+    
+    return {
+        'recommended_jobs': enriched_jobs,
+        'recommended_trainings': enriched_trainings
+    }
+
+
+
+def _get_active_jobs(limit=50) -> List[Dict[str, Any]]:
+    """Fetch recent active jobs with essential details only (optimized for AI)."""
+    try:
+        from users.models import Job
+        # Limit to most recent jobs and only fetch needed fields
+        jobs = Job.objects.filter(
+            status='active'
+        ).select_related(
+            'employer', 'category'
+        ).order_by('-created_at')[:limit]
+        
+        jobs_list = []
+        for job in jobs:
+            jobs_list.append({
+                'id': str(job.id),
+                'title': job.title,
+                'company_name': job.employer.company_name,
+                'description': job.description[:150],  # Truncate for AI efficiency
+                'location': job.location,
+                'employment_type': job.get_employment_type_display(),
+                'salary_min': float(job.salary_min) if job.salary_min else None,
+                'salary_max': float(job.salary_max) if job.salary_max else None,
+                'skills_required': job.skills_required[:5] if job.skills_required else [],  # Limit skills
+                'is_remote': job.is_remote,
+                'category': job.category.name if job.category else None
+            })
+        
+        return jobs_list
+    except Exception as e:
+        # Return empty list instead of crashing
+        import logging
+        logging.error(f"Failed to fetch jobs: {str(e)}")
+        return []
+
+
+def _get_active_trainings(limit=30) -> List[Dict[str, Any]]:
+    """Fetch recent active training programs with essential details only (optimized for AI)."""
+    try:
+        from users.models import TrainingProgram
+        # Limit to most recent trainings and only fetch needed fields
+        trainings = TrainingProgram.objects.filter(
+            is_active=True
+        ).select_related(
+            'provider__user', 'category'
+        ).order_by('-created_at')[:limit]
+        
+        trainings_list = []
+        for training in trainings:
+            trainings_list.append({
+                'id': str(training.id),
+                'name': training.name,
+                'description': training.description[:150],  # Truncate for AI efficiency
+                'provider_name': training.provider.user.full_name,
+                'category': training.category.name if training.category else None,
+                'duration': training.duration,
+                'duration_unit': training.get_duration_unit_display(),
+                'external_link': training.external_link
+            })
+        
+        return trainings_list
+    except Exception as e:
+        # Return empty list instead of crashing
+        import logging
+        logging.error(f"Failed to fetch trainings: {str(e)}")
+        return []
+
+
+def _analyze_with_ai(
+    quiz_data: Dict[str, str],
+    jobs_data: List[Dict[str, Any]],
+    trainings_data: List[Dict[str, Any]]
+) -> Dict[str, Any]:
+    """Use OpenAI to analyze quiz data and recommend matching jobs and trainings."""
+    
+    # Initialize OpenAI client
+    api_key = getattr(settings, 'OPENAI_API_KEY', None)
+    if not api_key:
+        raise ValueError("OPENAI_API_KEY not found in settings")
+    
+    client = OpenAI(api_key=api_key)
+    model = getattr(settings, 'OPENAI_MODEL', 'gpt-4o-mini')  # Use mini for faster/cheaper
+    
+    # Build prompt
+    prompt = _build_recommendation_prompt(quiz_data, jobs_data, trainings_data)
+    
+    try:
+        response = client.chat.completions.create(
+            model=model,
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a career counselor. Analyze quiz responses and recommend "
+                        "3-5 best matching jobs and trainings. Return ONLY valid JSON."
+                    )
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            temperature=0.5,  # Lower for more consistent results
+            max_tokens=2000,  # Reduced from 3000
+            timeout=30,  # Add 30 second timeout
+            response_format={"type": "json_object"}
+        )
+        
+        result = json.loads(response.choices[0].message.content)
+        
+        # Validate response structure
+        if 'recommended_jobs' not in result:
+            result['recommended_jobs'] = []
+        if 'recommended_trainings' not in result:
+            result['recommended_trainings'] = []
+        
+        return result
+        
+    except json.JSONDecodeError as e:
+        raise Exception(f"Failed to parse AI response: {str(e)}")
+    except Exception as e:
+        raise Exception(f"AI analysis failed: {str(e)}")
+
+
+def _build_recommendation_prompt(
+    quiz_data: Dict[str, str],
+    jobs_data: List[Dict[str, Any]],
+    trainings_data: List[Dict[str, Any]]
+) -> str:
+    """Build optimized prompt for AI recommendations (reduced token usage)."""
+    
+    # Format jobs data - compact format
+    jobs_summary = "\n".join([
+        f"{i+1}. {job['title']} at {job['company_name']} | "
+        f"{job['location']} ({'Remote' if job['is_remote'] else 'Onsite'}) | "
+        f"${job['salary_min'] or 0}-${job['salary_max'] or 'N/A'} | "
+        f"ID: {job['id']}"
+        for i, job in enumerate(jobs_data)
+    ]) if jobs_data else "No jobs available"
+    
+    # Format trainings data - compact format
+    trainings_summary = "\n".join([
+        f"{i+1}. {training['name']} by {training['provider_name']} | "
+        f"{training['duration']} {training['duration_unit']} | "
+        f"ID: {training['id']}"
+        for i, training in enumerate(trainings_data)
+    ]) if trainings_data else "No trainings available"
+    
+    prompt = f"""
+User Profile:
+• Interests: {quiz_data.get('interests', 'N/A')}
+• Work Environment: {quiz_data.get('work_environment', 'N/A')}
+• Training Time: {quiz_data.get('training_flexibility', 'N/A')}
+• Strengths: {quiz_data.get('strengths', 'N/A')}
+• Priorities: {quiz_data.get('job_priorities', 'N/A')}
+• Location: {quiz_data.get('location', 'N/A')}
+
+Available Jobs:
+{jobs_summary}
+
+Available Trainings:
+{trainings_summary}
+
+Task: Select 3-5 best matching jobs and 3-5 best matching trainings from the lists above.
+
+CRITICAL: You MUST return the EXACT UUID (ID) from the lists above. Copy-paste the ID exactly as shown.
+
+Return JSON with IDs and match reasons ONLY:
+{{
+  "recommended_jobs": [
+    {{
+      "id": "copy-exact-uuid-here",
+      "match_reason": "Explain why this job matches their interests, strengths, and priorities"
+    }}
+  ],
+  "recommended_trainings": [
+    {{
+      "id": "copy-exact-uuid-here",
+      "match_reason": "Explain why this training matches their goals and flexibility"
+    }}
+  ]
+}}
+"""
+    
+    return prompt
+

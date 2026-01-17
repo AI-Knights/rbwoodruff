@@ -100,9 +100,13 @@ class StripeWebhookView(APIView):
     permission_classes = []
     
     def post(self, request):
-        print("hello.........................................")
+        print("🔔 Webhook received..........................................")
         payload = request.body
         sig_header = request.META.get('HTTP_STRIPE_SIGNATURE')
+        
+        # Debug logging
+        print(f"📝 Webhook Secret configured: {bool(settings.STRIPE_WEBHOOK_SECRET)}")
+        print(f"📝 Signature header present: {bool(sig_header)}")
         
         # Verify webhook signature
         try:
@@ -111,9 +115,13 @@ class StripeWebhookView(APIView):
             )
         except ValueError as e:
             print(f"❌ Invalid payload: {e}")
+            print(f"📄 Payload preview: {payload[:200]}")
             return HttpResponse(status=400)
         except stripe.error.SignatureVerificationError as e:
             print(f"❌ Invalid signature: {e}")
+            print(f"🔑 Webhook secret is set: {bool(settings.STRIPE_WEBHOOK_SECRET)}")
+            print(f"🔑 Webhook secret length: {len(settings.STRIPE_WEBHOOK_SECRET) if settings.STRIPE_WEBHOOK_SECRET else 0}")
+            print(f"🔑 Signature header: {sig_header[:50] if sig_header else 'None'}...")
             return HttpResponse(status=400)
         
         print(f"✅ Received event: {event['type']}")
@@ -140,11 +148,13 @@ class StripeWebhookView(APIView):
                 # Find payment record
                 try:
                     payment = Payment.objects.get(id=payment_id)
+                    print(f"💳 Payment found: ID={payment_id}, Current Status={payment.status}")
                 except Payment.DoesNotExist:
                     print(f"❌ Payment not found: {payment_id}")
                     return HttpResponse(status=200)
                 
                 # Update payment status
+                print(f"🔄 Updating payment status from '{payment.status}' to 'succeeded'")
                 payment.status = 'succeeded'
                 payment.stripe_checkout_session_id = session['id']
                 
@@ -162,22 +172,34 @@ class StripeWebhookView(APIView):
                 
                 payment.generate_receipt_number()
                 payment.save()
+                print(f"💾 Payment saved successfully: Status={payment.status}, Receipt={payment.receipt_number}\"")
+                
+                # Verify payment was saved to database
+                payment.refresh_from_db()
+                print(f"✅ VERIFIED - Payment in DB: ID={payment.id}, Status={payment.status}, Amount=${payment.amount}")
                 
                 # ✅ UPDATE has_paid STATUS FOR USER
                 user = payment.user
                 try:
                     if user.user_type == 'general':
                         profile = user.general_profile
+                        old_has_paid = profile.has_paid
                         profile.has_paid = True
                         profile.save()
+                        profile.refresh_from_db()
                         print(f"✅ Updated has_paid for general user: {user.email}")
+                        print(f"   └─ has_paid: {old_has_paid} → {profile.has_paid}")
                     elif user.user_type == 'agency_referred':
                         profile = user.referred_profile
+                        old_has_paid = profile.has_paid
                         profile.has_paid = True
                         profile.save()
+                        profile.refresh_from_db()
                         print(f"✅ Updated has_paid for court-referred user: {user.email}")
+                        print(f"   └─ has_paid: {old_has_paid} → {profile.has_paid}")
                 except Exception as e:
                     print(f"⚠️ Could not update has_paid: {e}")
+                
                 
                 # Log transaction
                 TransactionLog.objects.create(
@@ -199,6 +221,15 @@ class StripeWebhookView(APIView):
                     print(f"⚠️ Failed to send receipt email: {e}")
                 
                 print(f"✅ Payment completed: ${payment.amount} for {user.email}")
+                print(f"=" * 80)
+                print(f"📊 ADMIN DASHBOARD SHOULD NOW SHOW:")
+                print(f"   Payment ID: {payment.id}")
+                print(f"   User: {user.email}")
+                print(f"   Amount: ${payment.amount}")
+                print(f"   Status: {payment.status} ✅")
+                print(f"   Receipt: {payment.receipt_number}")
+                print(f"   Has Paid: {profile.has_paid if 'profile' in locals() else 'N/A'} ✅")
+                print(f"=" * 80)
                 
             except Exception as e:
                 print(f"❌ Error processing checkout.session.completed: {e}")
@@ -223,6 +254,92 @@ class StripeWebhookView(APIView):
                         details={'session_id': session.get('id')}
                     )
                     print(f"⚠️ Checkout session expired for payment: {payment_id}")
+            except Payment.DoesNotExist:
+                pass
+            except Exception as e:
+                print(f"❌ Error processing checkout.session.expired: {e}")
+        
+        # Handle async payments (bank transfers, ACH, etc.) that complete after checkout
+        elif event['type'] == 'checkout.session.async_payment_succeeded':
+            session = event['data']['object']
+            
+            try:
+                payment_id = session.get('metadata', {}).get('payment_id')
+                if payment_id:
+                    payment = Payment.objects.get(id=payment_id)
+                    print(f"💳 Async payment succeeded: ID={payment_id}")
+                    
+                    payment.status = 'succeeded'
+                    payment.stripe_checkout_session_id = session['id']
+                    
+                    # Get receipt URL
+                    payment_intent_id = session.get('payment_intent')
+                    if payment_intent_id:
+                        try:
+                            payment_intent = stripe.PaymentIntent.retrieve(payment_intent_id)
+                            latest_charge_id = payment_intent.get('latest_charge')
+                            if latest_charge_id:
+                                charge = stripe.Charge.retrieve(latest_charge_id)
+                                payment.receipt_url = charge.get('receipt_url', '')
+                        except Exception as e:
+                            print(f"⚠️ Could not retrieve receipt URL: {e}")
+                    
+                    payment.generate_receipt_number()
+                    payment.save()
+                    print(f"💾 Async payment saved: Status={payment.status}")
+                    
+                    # Update has_paid status
+                    user = payment.user
+                    try:
+                        if user.user_type == 'general':
+                            profile = user.general_profile
+                            profile.has_paid = True
+                            profile.save()
+                            print(f"✅ Updated has_paid for general user: {user.email}")
+                        elif user.user_type == 'agency_referred':
+                            profile = user.referred_profile
+                            profile.has_paid = True
+                            profile.save()
+                            print(f"✅ Updated has_paid for court-referred user: {user.email}")
+                    except Exception as e:
+                        print(f"⚠️ Could not update has_paid: {e}")
+                    
+                    # Log transaction
+                    TransactionLog.objects.create(
+                        payment=payment,
+                        event_type='async_payment_succeeded',
+                        details={'session_id': session.get('id')}
+                    )
+                    
+                    # Send receipt email
+                    try:
+                        send_payment_receipt_email(user, payment)
+                        print(f"✅ Async payment receipt sent to: {user.email}")
+                    except Exception as e:
+                        print(f"⚠️ Failed to send receipt email: {e}")
+                        
+            except Payment.DoesNotExist:
+                print(f"❌ Payment not found for async payment: {payment_id}")
+            except Exception as e:
+                print(f"❌ Error processing async_payment_succeeded: {e}")
+        
+        # Handle async payment failures
+        elif event['type'] == 'checkout.session.async_payment_failed':
+            session = event['data']['object']
+            
+            try:
+                payment_id = session.get('metadata', {}).get('payment_id')
+                if payment_id:
+                    payment = Payment.objects.get(id=payment_id)
+                    payment.status = 'failed'
+                    payment.save()
+                    
+                    TransactionLog.objects.create(
+                        payment=payment,
+                        event_type='async_payment_failed',
+                        details={'session_id': session.get('id')}
+                    )
+                    print(f"⚠️ Async payment failed for payment: {payment_id}")
             except Payment.DoesNotExist:
                 pass
             except Exception as e:

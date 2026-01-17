@@ -17,8 +17,7 @@ from .serializers import (
     TrainingProgramSerializer, EnrollmentSerializer, CertificateSerializer,
     CareerQuizSerializer, ResumeSerializer, WorkExperienceSerializer,
     EducationSerializer, SkillSerializer, DocumentSerializer,
-    SavedJobSerializer, ContactMessageSerializer, DashboardStatsSerializer,
-    CareerAnalysisRequestSerializer, CareerAnalysisResponseSerializer
+    SavedJobSerializer, ContactMessageSerializer, DashboardStatsSerializer
 )
 from core.permissions import IsJobSeeker, IsPaidUser
 from core.utils import calculate_resume_completeness, parse_resume_pdf
@@ -30,31 +29,17 @@ class DashboardView(APIView):
     permission_classes = [IsAuthenticated, IsJobSeeker]
     
     def get(self, request):
+        from users.models import TrainingProvider
         user = request.user
         
-        # Get resume if exists
-        try:
-            resume = Resume.objects.get(user=user)
-            resume_completeness = resume.completeness_percentage
-        except Resume.DoesNotExist:
-            resume_completeness = 0
-        
-        # Calculate stats
+        # Calculate platform stats
         stats = {
             'live_jobs': Job.objects.filter(status='active').count(),
-            'active_trainings': Enrollment.objects.filter(
-                user=user, status__in=['enrolled', 'in_progress']
-            ).count(),
+            'trainers_count': TrainingProvider.objects.count(),
+            'total_trainings': TrainingProgram.objects.filter(is_active=True).count(),
             'certificates_earned': Certificate.objects.filter(
                 enrollment__user=user, verification_status='verified'
             ).count(),
-            'total_applications': JobApplication.objects.filter(applicant=user).count(),
-            'pending_interviews': Interview.objects.filter(
-                application__applicant=user,
-                status='scheduled'
-            ).count(),
-            'saved_jobs_count': SavedJob.objects.filter(user=user).count(),
-            'resume_completeness': resume_completeness
         }
         
         serializer = DashboardStatsSerializer(stats)
@@ -139,14 +124,21 @@ class JobApplicationCreateView(APIView):
 
 
 class JobApplicationListView(generics.ListAPIView):
-    """List user's job applications"""
+    """List user's job applications with optional status filtering"""
     serializer_class = JobApplicationSerializer
     permission_classes = [IsAuthenticated, IsJobSeeker]
     
     def get_queryset(self):
-        return JobApplication.objects.filter(
+        queryset = JobApplication.objects.filter(
             applicant=self.request.user
-        ).order_by('-applied_at')
+        )
+        
+        # Filter by status if provided
+        status_filter = self.request.query_params.get('status', None)
+        if status_filter:
+            queryset = queryset.filter(status=status_filter)
+        
+        return queryset.order_by('-applied_at')
 
 
 class JobApplicationDetailView(generics.RetrieveAPIView):
@@ -156,6 +148,18 @@ class JobApplicationDetailView(generics.RetrieveAPIView):
     
     def get_queryset(self):
         return JobApplication.objects.filter(applicant=self.request.user)
+
+
+class InterviewAndRejectedApplicationsView(generics.ListAPIView):
+    """List user's applications that are either interview_scheduled or rejected"""
+    serializer_class = JobApplicationSerializer
+    permission_classes = [IsAuthenticated, IsJobSeeker]
+    
+    def get_queryset(self):
+        return JobApplication.objects.filter(
+            applicant=self.request.user,
+            status__in=['interview_scheduled', 'rejected']
+        ).order_by('-applied_at')
 
 
 class InterviewListView(generics.ListAPIView):
@@ -218,6 +222,9 @@ class TrainingProgramListView(generics.ListAPIView):
     
     def get_queryset(self):
         queryset = TrainingProgram.objects.filter(is_active=True)
+        
+        # Exclude trainings the user is already enrolled in
+        queryset = queryset.exclude(enrollments__user=self.request.user)
         
         # Search
         search = self.request.query_params.get('search', None)
@@ -540,33 +547,48 @@ class ContactMessageView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
     
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        contact_message = serializer.save(user=self.request.user)
+        
+        # Send email notification to admin
+        try:
+            from authentication.email_service import send_contact_form_to_admin
+            send_contact_form_to_admin(contact_message)
+        except Exception as e:
+            # Log error but don't fail the request
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to send contact form email to admin: {str(e)}")
 
 
 # ===== AI CAREER ANALYSIS =====
 class CareerAnalysisView(APIView):
-    """AI-powered career analysis based on quiz, work history, and resume PDF"""
+    """AI-powered job and training recommendations based on quiz responses"""
     permission_classes = [IsAuthenticated]
     
     def post(self, request):
         """
-        Analyze career data and provide AI-powered recommendations.
+        Analyze quiz data and provide job and training recommendations.
         
         Expected request body:
         {
-            "quiz_data": {...},
-            "work_history": [...],
-            "public_id": "...",
-            "url": "https://cloudinary-url.pdf"
+            "quiz_data": {
+                "interests": "...",
+                "work_environment": "...",
+                "training_flexibility": "...",
+                "strengths": "...",
+                "job_priorities": "...",
+                "location": "..."
+            }
         }
         """
         import logging
-        from users.ai_service import analyze_career_data
+        from users.ai_service import recommend_jobs_and_trainings
+        from users.serializers import CareerRecommendationRequestSerializer, CareerRecommendationResponseSerializer
         
         logger = logging.getLogger(__name__)
         
         # Validate request data
-        request_serializer = CareerAnalysisRequestSerializer(data=request.data)
+        request_serializer = CareerRecommendationRequestSerializer(data=request.data)
         if not request_serializer.is_valid():
             logger.error(f"Invalid request data: {request_serializer.errors}")
             return Response({
@@ -577,30 +599,18 @@ class CareerAnalysisView(APIView):
         validated_data = request_serializer.validated_data
         
         try:
-            # Extract validated data
+            # Extract validated quiz data
             quiz_data = validated_data['quiz_data']
-            work_history = validated_data['work_history']
-            pdf_url = validated_data['url']
-            public_id = validated_data.get('public_id')  # Get public_id
             
-            logger.info(f"Starting career analysis for user {request.user.id}")
+            logger.info(f"Starting career recommendations for user {request.user.id}")
             
             # Call AI service
-            analysis_result = analyze_career_data(
-                quiz_data=quiz_data,
-                work_history=work_history,
-                pdf_url=pdf_url
-            )
+            recommendations = recommend_jobs_and_trainings(quiz_data=quiz_data)
             
-            logger.info(f"Career analysis completed for user {request.user.id}")
-            
-            
-            # Add PDF URL and public_id to response
-            analysis_result['resume_pdf_url'] = pdf_url
-            analysis_result['resume_public_id'] = public_id
+            logger.info(f"Career recommendations completed for user {request.user.id}")
             
             # Validate response data
-            response_serializer = CareerAnalysisResponseSerializer(data=analysis_result)
+            response_serializer = CareerRecommendationResponseSerializer(data=recommendations)
             if not response_serializer.is_valid():
                 logger.error(f"Invalid AI response: {response_serializer.errors}")
                 return Response({
@@ -620,14 +630,9 @@ class CareerAnalysisView(APIView):
             
         except Exception as e:
             # Handle any other errors
-            logger.error(f"Career analysis failed: {str(e)}", exc_info=True)
+            logger.error(f"Career recommendations failed: {str(e)}", exc_info=True)
             
-            # Check if it's a PDF download error
-            if 'download' in str(e).lower() or 'cloudinary' in str(e).lower():
-                return Response({
-                    'error': 'Failed to download resume',
-                    'message': 'Unable to access the resume file. Please ensure the URL is valid.'
-                }, status=status.HTTP_400_BAD_REQUEST)
+
             
             # Check if it's an OpenAI error
             if 'openai' in str(e).lower() or 'api' in str(e).lower():
@@ -640,5 +645,30 @@ class CareerAnalysisView(APIView):
             return Response({
                 'error': 'Analysis failed',
                 'message': 'An unexpected error occurred. Please try again.'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class DeleteAccountView(APIView):
+    """Permanently delete user account"""
+    permission_classes = [IsAuthenticated, IsJobSeeker]
+
+    def delete(self, request):
+        user = request.user
+        
+        # Double check user type safety, though IsJobSeeker permission handles most of it
+        if user.user_type not in ['general', 'agency_referred']:
+            return Response({
+                'error': 'Account deletion not allowed for this user type'
+            }, status=status.HTTP_403_FORBIDDEN)
+            
+        try:
+            # Perform deletion
+            user.delete()
+            return Response({
+                'message': 'Account deleted successfully'
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({
+                'error': f'Failed to delete account: {str(e)}'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 

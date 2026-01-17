@@ -589,9 +589,6 @@ class UserHistoryReportView(APIView):
         
         # Get resume data
         resume_data = None
-        skills_data = []
-        work_experience_data = []
-        education_data = []
         
         try:
             from users.models import Resume
@@ -604,33 +601,6 @@ class UserHistoryReportView(APIView):
                 'resume_pdf_url': resume.resume_pdf_url,
                 'completeness_percentage': resume.completeness_percentage
             }
-            
-            # Get skills
-            skills = resume.skills.all()
-            skills_data = [{'name': s.skill_name, 'proficiency': s.proficiency} for s in skills]
-            
-            # Get work experience
-            work_exp = resume.work_experiences.all()
-            work_experience_data = [{
-                'job_title': w.job_title,
-                'company_name': w.company_name,
-                'location': w.location,
-                'start_date': w.start_date,
-                'end_date': w.end_date,
-                'is_current': w.is_current,
-                'description': w.description
-            } for w in work_exp]
-            
-            # Get education
-            education = resume.education_entries.all()
-            education_data = [{
-                'institution_name': e.institution_name,
-                'degree': e.degree,
-                'field_of_study': e.field_of_study,
-                'start_date': e.start_date,
-                'end_date': e.end_date,
-                'gpa': str(e.gpa) if e.gpa else None
-            } for e in education]
             
         except Resume.DoesNotExist:
             pass
@@ -706,9 +676,6 @@ class UserHistoryReportView(APIView):
             'case_assignment': case_info,
             'career_quiz': quiz_data,
             'resume': resume_data,
-            'skills': skills_data,
-            'work_experience': work_experience_data,
-            'education': education_data,
             'training_enrollments': training_data,
             'certificates': certificates_data,
             'job_applications': job_applications_data,
@@ -718,7 +685,6 @@ class UserHistoryReportView(APIView):
                 'total_certificates': len(certificates_data),
                 'verified_certificates': sum(1 for c in certificates_data if c['verification_status'] == 'verified'),
                 'total_job_applications': len(job_applications_data),
-                'total_skills': len(skills_data)
             }
         }
         

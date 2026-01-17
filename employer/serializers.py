@@ -144,6 +144,48 @@ class InterviewCreateSerializer(serializers.ModelSerializer):
         ]
 
 
+class EnhancedApplicationStatusSerializer(serializers.Serializer):
+    """Enhanced serializer for application status updates with status-specific fields"""
+    
+    status = serializers.ChoiceField(
+        choices=['shortlisted', 'rejected', 'hired', 'interview_scheduled', 'offer_received']
+    )
+    employer_notes = serializers.CharField(required=False, allow_blank=True)
+    
+    # Hiring fields (when status='hired')
+    start_date = serializers.DateField(required=False, allow_null=True)
+    joining_time = serializers.TimeField(required=False, allow_null=True)
+    hiring_notes = serializers.CharField(required=False, allow_blank=True)
+    
+    # Interview fields (when status='interview_scheduled')
+    scheduled_date = serializers.DateField(required=False, allow_null=True)
+    scheduled_time = serializers.TimeField(required=False, allow_null=True)
+    duration_minutes = serializers.IntegerField(required=False, default=30)
+    meeting_link = serializers.URLField(required=False, allow_blank=True)
+    location = serializers.CharField(required=False, allow_blank=True, max_length=200)
+    interview_notes = serializers.CharField(required=False, allow_blank=True)
+    
+    def validate(self, data):
+        status = data.get('status')
+        
+        # Validate hiring fields
+        if status == 'hired':
+            if not data.get('start_date'):
+                raise serializers.ValidationError({
+                    'start_date': 'This field is required when status is "hired"'
+                })
+        
+        # Validate interview fields
+        if status == 'interview_scheduled':
+            if not data.get('scheduled_date') or not data.get('scheduled_time'):
+                raise serializers.ValidationError({
+                    'scheduled_date': 'Both scheduled_date and scheduled_time are required for interview scheduling',
+                    'scheduled_time': 'Both scheduled_date and scheduled_time are required for interview scheduling'
+                })
+        
+        return data
+
+
 class EmployerDashboardSerializer(serializers.Serializer):
     total_jobs_posted = serializers.IntegerField()
     active_jobs = serializers.IntegerField()

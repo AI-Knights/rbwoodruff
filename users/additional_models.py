@@ -42,8 +42,9 @@ class ContactMessage(models.Model):
     # For non-logged-in users
     name = models.CharField(max_length=200, blank=True)
     email = models.EmailField(blank=True)
+    phone = models.CharField(max_length=20, blank=True)
     
-    subject = models.CharField(max_length=300)
+    subject = models.CharField(max_length=300, blank=True)
     message = models.TextField()
     
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new')

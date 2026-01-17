@@ -5,7 +5,8 @@ from .views import (
     
     # Jobs
     JobListView, JobDetailView, JobApplicationCreateView,
-    JobApplicationListView, JobApplicationDetailView, InterviewListView,
+    JobApplicationListView, JobApplicationDetailView, InterviewAndRejectedApplicationsView,
+    InterviewListView,
     
     # Saved Jobs
     SavedJobCreateView, SavedJobListView, SavedJobDeleteView,
@@ -27,10 +28,12 @@ from .views import (
     
     # AI Career Analysis
     CareerAnalysisView,
+    DeleteAccountView
 )
 from .category_views import PublicCategoryListView
 from .resume_status_view import ResumeCompletenessView
 from .resume_pipeline_view import ResumeGenerationPipelineView
+from .analyze_pdf_view import AnalyzeResumePDFView
 
 
 urlpatterns = [
@@ -42,6 +45,7 @@ urlpatterns = [
     path('jobs/<uuid:pk>/', JobDetailView.as_view(), name='job_detail'),
     path('jobs/<uuid:job_id>/apply/', JobApplicationCreateView.as_view(), name='job_apply'),
     path('applications/', JobApplicationListView.as_view(), name='applications_list'),
+    path('applications/interviews-and-rejected/', InterviewAndRejectedApplicationsView.as_view(), name='interviews_rejected'),
     path('applications/<uuid:pk>/', JobApplicationDetailView.as_view(), name='application_detail'),
     path('interviews/', InterviewListView.as_view(), name='interviews'),
     
@@ -63,6 +67,7 @@ urlpatterns = [
     path('resume/parse/', ResumeParseView.as_view(), name='resume_parse'),
     path('resume/completeness/', ResumeCompletenessView.as_view(), name='resume_completeness'),
     path('resume/generate-and-analyze/', ResumeGenerationPipelineView.as_view(), name='resume_generate_analyze'),
+    path('resume/analyze-pdf/', AnalyzeResumePDFView.as_view(), name='analyze_pdf'),
     path('resume/work-experience/', WorkExperienceView.as_view(), name='work_experience'),
     path('resume/work-experience/<uuid:pk>/', WorkExperienceDetailView.as_view(), name='work_experience_detail'),
     path('resume/education/', EducationView.as_view(), name='education'),
@@ -80,6 +85,9 @@ urlpatterns = [
     
     # AI Career Analysis
     path('career-analysis/', CareerAnalysisView.as_view(), name='career_analysis'),
+    
+    # Account Settings
+    path('delete-account/', DeleteAccountView.as_view(), name='delete_account'),
     
     # Categories (public listing for providers)
     path('categories/', PublicCategoryListView.as_view(), name='public_categories'),
