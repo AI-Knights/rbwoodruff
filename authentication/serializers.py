@@ -212,10 +212,11 @@ class UserProfileSerializer(serializers.ModelSerializer):
     has_paid = serializers.SerializerMethodField()
     profile_data = serializers.SerializerMethodField()
     profile_pic = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    phone_number = serializers.CharField(required=False, allow_blank=True, allow_null=True, max_length=20)
     
     class Meta:
         model = User
-        fields = ['id', 'email', 'full_name', 'user_type', 'profile_pic', 'date_joined', 'has_paid', 'profile_data']
+        fields = ['id', 'email', 'full_name', 'user_type', 'profile_pic', 'phone_number', 'date_joined', 'has_paid', 'profile_data']
         read_only_fields = ['id', 'email', 'user_type', 'date_joined', 'has_paid', 'profile_data']
     
     def validate_email(self, value):
@@ -243,9 +244,23 @@ class UserProfileSerializer(serializers.ModelSerializer):
         
         return value
     
+    def validate_phone_number(self, value):
+        """Validate phone number"""
+        if not value:
+            return value
+        
+        # Basic validation: ensure it's not empty after stripping whitespace
+        if isinstance(value, str):
+            value = value.strip()
+            if not value:
+                raise serializers.ValidationError("Phone number cannot be empty")
+        
+        return value
+    
     def update(self, instance, validated_data):
         """Handle profile update with base64 image upload to Cloudinary"""
         profile_pic_data = validated_data.pop('profile_pic', None)
+        phone_number_data = validated_data.pop('phone_number', None)
         
         # Update basic fields (only full_name is writable)
         instance.full_name = validated_data.get('full_name', instance.full_name)
@@ -290,6 +305,25 @@ class UserProfileSerializer(serializers.ModelSerializer):
             except Exception as e:
                 logger.error(f"Failed to upload profile image for user {instance.id}: {str(e)}")
                 raise serializers.ValidationError(f"Failed to upload image: {str(e)}")
+        
+        # Handle phone number update for job seekers
+        if phone_number_data is not None:
+            try:
+                if instance.user_type == 'general':
+                    profile = instance.general_profile
+                    profile.phone_number = phone_number_data
+                    profile.save()
+                elif instance.user_type == 'agency_referred':
+                    profile = instance.referred_profile
+                    profile.phone_number = phone_number_data
+                    profile.save()
+                else:
+                    # For other user types, phone number update is not applicable
+                    raise serializers.ValidationError(
+                        "Phone number update is only available for general and agency-referred users"
+                    )
+            except (GeneralUser.DoesNotExist, ReferredUser.DoesNotExist):
+                raise serializers.ValidationError("User profile not found")
         
         instance.save()
         return instance
