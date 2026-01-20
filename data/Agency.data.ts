@@ -1,0 +1,60 @@
+import { Agency } from '@/types/Agency.type';
+
+export const agencies: Agency[] = [
+  {
+    id: '1',
+    agencyId: 'CR-20153',
+    name: 'Supreme court',
+    representative: 'John anderson',
+    email: 'Johono@gmail.com',
+    contact: '+8825652-203014',
+    registrationDate: '22 March, 2025',
+    status: 'Approved',
+    address: '1 First Street NE, DC',
+    documents: [
+      { name: 'Court Authorization Letter.pdf', uploadedAt: '12 March, 2025 14:32:20', url: '#' },
+      { name: 'official Registration.pdf', uploadedAt: '12 March, 2025 14:32:20', url: '#' },
+    ],
+  },
+  {
+    id: '2',
+    agencyId: 'CR-20154',
+    name: 'District Court',
+    representative: 'Sarah jonson',
+    email: 'Saraho@gmail.com',
+    contact: '+8825652-203014',
+    registrationDate: '22 March, 2025',
+    status: 'Approved',
+    address: '123 Justice Ave, Washington DC',
+    documents: [
+      { name: 'Court Authorization Letter.pdf', uploadedAt: '12 March, 2025 14:32:20', url: '#' },
+    ],
+  },
+  {
+    id: '3',
+    agencyId: 'CR-20155',
+    name: 'Supreme court',
+    representative: 'Devid coper',
+    email: 'Marialis@gmail.com',
+    contact: '+8825652-203014',
+    registrationDate: '22 March, 2025',
+    status: 'Approved',
+    address: '456 Federal Plaza',
+    documents: [],
+  },
+  {
+    id: '4',
+    agencyId: 'CR-20156',
+    name: 'District Court',
+    representative: 'Robert Willium',
+    email: 'Saraho@gmail.com',
+    contact: '+8825652-203014',
+    registrationDate: '22 March, 2025',
+    status: 'Pending',
+    address: '789 Court House Rd',
+    documents: [
+      { name: 'Court Authorization Letter.pdf', uploadedAt: '12 March, 2025 14:32:20', url: '#' },
+      { name: 'official Registration.pdf', uploadedAt: '12 March, 2025 14:32:20', url: '#' },
+    ],
+  },  
+];
