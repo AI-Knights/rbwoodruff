@@ -53,10 +53,10 @@ export default function DeleteTrainingDialog({
       <AlertDialogContent className="sm:max-w-md">
         <AlertDialogHeader>
           <AlertDialogTitle className="text-xl font-semibold">
-            Delete Training
+            Delete Program
           </AlertDialogTitle>
           <AlertDialogDescription className="text-base text-gray-600">
-            Are you sure you want to Delete this training?
+            Are you sure you want to Delete this program?
             <br />
             <span className="font-medium text-gray-800">"{trainingName}"</span>
           </AlertDialogDescription>

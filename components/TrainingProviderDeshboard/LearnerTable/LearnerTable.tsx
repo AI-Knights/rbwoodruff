@@ -190,13 +190,14 @@ export default function LearnerTable() {
                     {getSortIcon("certificate_status")}
                   </Button>
                 </TableHead>
+                <TableHead className="font-bold">Financial Aid</TableHead>
                 <TableHead className="text-right font-bold">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredLearners.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-12 text-gray-500">
+                  <TableCell colSpan={8} className="text-center py-12 text-gray-500">
                     {searchQuery
                       ? "No learners found matching your search."
                       : "No enrolled learners yet."}
@@ -250,6 +251,15 @@ export default function LearnerTable() {
                           No
                         </span>
                       )}
+                    </TableCell>
+                    <TableCell>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        learner.financial_aid_requested
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-gray-100 text-gray-600'
+                      }`}>
+                        {learner.financial_aid_requested ? 'Yes' : 'No'}
+                      </span>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">

@@ -63,7 +63,7 @@ export default function EmployerList() {
           <TableHeader>
             <TableRow>
               <TableHead className="font-bold">Employer Name</TableHead>
-              <TableHead className="font-bold">Training Program</TableHead>
+              <TableHead className="font-bold">Program</TableHead>
               <TableHead className="font-bold">Roles Hiring</TableHead>
               <TableHead className="font-bold">Avg Salary Range</TableHead>
               <TableHead className="font-bold">Active Listings</TableHead>

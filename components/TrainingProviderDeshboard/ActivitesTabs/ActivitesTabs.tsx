@@ -25,7 +25,7 @@ export default function ActivitesTabs() {
       value: "employer_linkages",
     },
     {
-      name: "Trainings",
+      name: "Programs",
       icon: <MdModelTraining className="text-xl" />,
       value: "trainings",
     },

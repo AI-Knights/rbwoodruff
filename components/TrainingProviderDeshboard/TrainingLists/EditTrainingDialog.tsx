@@ -115,7 +115,7 @@ export default function EditTrainingDialog({ training }: EditTrainingDialogProps
 
         try {
             await updateProgram({ id: training.id, data: payload }).unwrap();
-            toast.success("Training program updated successfully");
+            toast.success("Program updated successfully");
             setOpen(false);
         } catch (e) {
             const error = e as { data?: { description?: string } };

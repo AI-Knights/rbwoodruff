@@ -74,6 +74,7 @@ export interface LearnerEnrollment {
   certificate_url: string | null;
   certificate_status: string | null;
   rejection_reason: string | null;
+  financial_aid_requested: boolean;
 }
 
 // Interface for a single program summary
