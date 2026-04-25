@@ -6,9 +6,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+
 import { Button } from "@/components/ui/button";
-import { Delete, DeleteIcon, Eye, Search, Trash } from "lucide-react"; // Changed SearchIcon to Search
+import { Search, Trash } from "lucide-react";
 import {
   InputGroup,
   InputGroupAddon,
@@ -19,7 +19,7 @@ import { useState, useMemo } from "react";
 import { useProgrammListQuery } from "@/store/api/trainerSlice/trainerSlice";
 import AddTraining from "../AddTraining/AddTraining";
 import EditTrainingDialog from "./EditTrainingDialog";
-import { FiDelete } from "react-icons/fi";
+
 
 export default function TrainingLists() {
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -79,12 +79,12 @@ export default function TrainingLists() {
 
       {/* Loading / Error States */}
       {isLoading && (
-        <div className="text-center py-8 text-gray-500">Loading trainings...</div>
+        <div className="text-center py-8 text-gray-500">Loading programs...</div>
       )}
 
       {isError && (
         <div className="text-center py-8 text-red-500">
-          Failed to load trainings. Please try again.
+          Failed to load programs. Please try again.
         </div>
       )}
 
@@ -95,8 +95,8 @@ export default function TrainingLists() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="font-bold">Training Name</TableHead>
-                  <TableHead className="font-bold">Training Link</TableHead>
+                  <TableHead className="font-bold">Program Name</TableHead>
+                  <TableHead className="font-bold">Program Link</TableHead>
                   <TableHead className="font-bold">Duration</TableHead>
                   <TableHead className="font-bold">Deadline</TableHead>
                   <TableHead className="text-center font-bold">Actions</TableHead>
@@ -107,8 +107,8 @@ export default function TrainingLists() {
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-8 text-gray-500">
                       {searchQuery
-                        ? "No trainings found matching your search."
-                        : "No trainings available."}
+                        ? "No programs found matching your search."
+                        : "No programs available."}
                     </TableCell>
                   </TableRow>
                 ) : (

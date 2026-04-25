@@ -65,7 +65,7 @@ export default function EditTrainingDialog({ training }: EditTrainingDialogProps
         defaultValues: {
             name: training.name,
             description: training.description,
-            category: training.category, // assuming this is ID from API
+            category: training.category,
             external_link: training.external_link,
             duration: training.duration,
             duration_unit: training.duration_unit as "hours" | "days" | "weeks",
@@ -134,7 +134,7 @@ export default function EditTrainingDialog({ training }: EditTrainingDialogProps
             <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto w-full">
                 <DialogHeader>
                     <DialogTitle className="text-2xl font-bold text-gray-800">
-                        Edit Training Program
+                        Edit Program
                     </DialogTitle>
                 </DialogHeader>
 
@@ -179,7 +179,7 @@ export default function EditTrainingDialog({ training }: EditTrainingDialogProps
 
                         {/* External Link */}
                         <div className="space-y-2">
-                            <Label htmlFor="external_link" className="font-medium">Training Link (URL)</Label>
+                            <Label htmlFor="external_link" className="font-medium">Program Link (URL)</Label>
                             <Input
                                 id="external_link"
                                 type="url"

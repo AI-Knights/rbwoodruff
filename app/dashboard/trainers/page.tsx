@@ -6,10 +6,10 @@ function page() {
     <div>
       <div>
         <h1 className="text-2xl font-bold text-gray-900">
-          Trainers
+          Training Providers
         </h1>
         <p className="text-sm text-gray-600 mt-2 mb-2">
-          View and Manage all Trainers.
+          View and Manage all Training Providers.
         </p>
       </div>
       <TrainerTable/>

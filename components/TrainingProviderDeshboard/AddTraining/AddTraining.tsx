@@ -105,14 +105,14 @@ export default function AddTraining() {
     <Dialog>
       <DialogTrigger asChild>
         <Button variant="outline">
-          <Plus /> Add Training
+          <Plus /> Add Program
         </Button>
       </DialogTrigger>
 
       <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto w-full">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-gray-800">
-            Create Training Program
+            Create Program
           </DialogTitle>
         </DialogHeader>
 
@@ -157,7 +157,7 @@ export default function AddTraining() {
 
             {/* External Link */}
             <div className="space-y-2">
-              <Label htmlFor="external_link" className="font-medium">Training Link (URL)</Label>
+              <Label htmlFor="external_link" className="font-medium">Program Link (URL)</Label>
               <Input
                 id="external_link"
                 type="url"
@@ -259,7 +259,7 @@ export default function AddTraining() {
               disabled={isSubmitting}
               className="bg-black text-white px-8 h-11 hover:bg-gray-800 transition-colors"
             >
-              {isSubmitting ? "Creating..." : "Create Training"}
+              {isSubmitting ? "Creating..." : "Create Program"}
             </Button>
           </div>
         </form>

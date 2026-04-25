@@ -1,6 +1,5 @@
 "use client";
 import ComplianceStatusCard from '@/components/agencyDashboard/overview/ComplianceStatusCard'
-import UpcomingCourtDatesCard from '@/components/agencyDashboard/overview/UpcomingCourtDatesCard'
 import OverviewCard from '@/components/elements/OverviewCard'
 import { overviewCards } from '@/data/Agency-overview.data'
 import { useGetAgencyDashboardQuery } from '@/store/api/agencySlice/agencySlice'
@@ -37,8 +36,7 @@ function Page() {
             <OverviewCard key={index} {...item} />
           ))}
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
-          <UpcomingCourtDatesCard data={data?.upcoming_court_dates} />
+        <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 mt-8">
           <ComplianceStatusCard stats={{
             total: data?.total_assigned_users || 0,
             on_track: data?.in_progress || 0,

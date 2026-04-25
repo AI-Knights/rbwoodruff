@@ -5,6 +5,7 @@ import {
     useUploadCaseCSVMutation,
     useUpdateAgencyCaseMutation,
     useDeleteAgencyCaseMutation,
+    useAddIndividualCaseMutation,
     type AgencyCaseLoad
 } from "@/store/api/agencySlice/agencySlice";
 import { Upload, FileText, CheckCircle, XCircle, AlertCircle, Loader2 } from "lucide-react";
@@ -50,10 +51,19 @@ const CaseManagement = () => {
     const [uploadCsv, { isLoading: isUploading }] = useUploadCaseCSVMutation();
     const [updateCase, { isLoading: isUpdating }] = useUpdateAgencyCaseMutation();
     const [deleteCase, { isLoading: isDeleting }] = useDeleteAgencyCaseMutation();
+    const [addIndividualCase, { isLoading: isAdding }] = useAddIndividualCaseMutation();
 
     const [isInstructionsOpen, setIsInstructionsOpen] = useState(false);
+    const [isAddIndividualOpen, setIsAddIndividualOpen] = useState(false);
     const [editingCase, setEditingCase] = useState<AgencyCaseLoad | null>(null);
     const [deletingCaseId, setDeletingCaseId] = useState<string | null>(null);
+    const [individualForm, setIndividualForm] = useState({
+        email: '',
+        case_id: '',
+        court_name: '',
+        court_date: '',
+        status: 'on_track',
+    });
 
     const handleUpdate = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -90,6 +100,21 @@ const CaseManagement = () => {
             setDeletingCaseId(null);
         } catch (err) {
             toast.error("Failed to delete case");
+        }
+    };
+
+    const handleAddIndividual = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            await addIndividualCase({
+                ...individualForm,
+                court_date: individualForm.court_date || null,
+            }).unwrap();
+            toast.success("Individual case added successfully");
+            setIsAddIndividualOpen(false);
+            setIndividualForm({ email: '', case_id: '', court_name: '', court_date: '', status: 'on_track' });
+        } catch (err: any) {
+            toast.error(err?.data?.error || "Failed to add individual case");
         }
     };
 
@@ -151,6 +176,15 @@ const CaseManagement = () => {
                     <div className="flex items-center gap-3">
                         <Button variant="outline" onClick={() => setIsInstructionsOpen(true)} disabled={isUploading}>
                             Download Sample
+                        </Button>
+
+                        <Button
+                            variant="outline"
+                            onClick={() => setIsAddIndividualOpen(true)}
+                            disabled={isUploading}
+                            className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+                        >
+                            + Add Individual
                         </Button>
 
                         <Dialog open={isInstructionsOpen} onOpenChange={setIsInstructionsOpen}>
@@ -284,6 +318,84 @@ const CaseManagement = () => {
                     </TableBody>
                 </Table>
             </div>
+            {/* Add Individual Case Dialog */}
+            <Dialog open={isAddIndividualOpen} onOpenChange={(open) => { setIsAddIndividualOpen(open); if (!open) setIndividualForm({ email: '', case_id: '', court_name: '', court_date: '', status: 'on_track' }); }}>
+                <DialogContent className="max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle>Add Individual</DialogTitle>
+                        <DialogDescription>Add a single individual's case details manually.</DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleAddIndividual} className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="ind_email" className="text-right">Email <span className="text-red-500">*</span></Label>
+                            <Input
+                                id="ind_email"
+                                type="email"
+                                required
+                                placeholder="user@example.com"
+                                value={individualForm.email}
+                                onChange={(e) => setIndividualForm({ ...individualForm, email: e.target.value })}
+                                className="col-span-3"
+                            />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="ind_case_id" className="text-right">Case ID <span className="text-red-500">*</span></Label>
+                            <Input
+                                id="ind_case_id"
+                                required
+                                placeholder="CASE-001"
+                                value={individualForm.case_id}
+                                onChange={(e) => setIndividualForm({ ...individualForm, case_id: e.target.value })}
+                                className="col-span-3"
+                            />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="ind_court_name" className="text-right">Court Name</Label>
+                            <Input
+                                id="ind_court_name"
+                                placeholder="City Court"
+                                value={individualForm.court_name}
+                                onChange={(e) => setIndividualForm({ ...individualForm, court_name: e.target.value })}
+                                className="col-span-3"
+                            />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="ind_court_date" className="text-right">Court Date</Label>
+                            <Input
+                                id="ind_court_date"
+                                type="date"
+                                value={individualForm.court_date}
+                                onChange={(e) => setIndividualForm({ ...individualForm, court_date: e.target.value })}
+                                className="col-span-3"
+                            />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="ind_status" className="text-right">Status</Label>
+                            <Select
+                                value={individualForm.status}
+                                onValueChange={(val) => setIndividualForm({ ...individualForm, status: val })}
+                            >
+                                <SelectTrigger className="col-span-3">
+                                    <SelectValue placeholder="Select status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="on_track">On Track</SelectItem>
+                                    <SelectItem value="delayed">Delayed</SelectItem>
+                                    <SelectItem value="non_compliant">Non Compliant</SelectItem>
+                                    <SelectItem value="completed">Completed</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <DialogFooter>
+                            <Button type="button" variant="secondary" onClick={() => setIsAddIndividualOpen(false)}>Cancel</Button>
+                            <Button type="submit" disabled={isAdding} className="bg-black text-white hover:bg-gray-800">
+                                {isAdding ? "Adding..." : "Add Individual"}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
             {/* Editor Dialog */}
             <Dialog open={!!editingCase} onOpenChange={(open) => !open && setEditingCase(null)}>
                 <DialogContent>

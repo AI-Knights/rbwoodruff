@@ -6,10 +6,10 @@ function page() {
     <div>
       <div>
         <h1 className="text-2xl font-bold text-gray-900">
-          Trainees
+          Students
         </h1>
         <p className="text-sm text-gray-600 mt-2 mb-2">
-          View and Manage all trainees.
+          View and Manage all Students.
         </p>
       </div>
       <TraineesTable/>

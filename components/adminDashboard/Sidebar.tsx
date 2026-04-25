@@ -20,9 +20,9 @@ const Sidebar = ({
       icon: Users,
       path: "/dashboard/employers",
     },
-    { name: "Trainers", icon: Shield, path: "/dashboard/trainers" },
+    { name: "Training Providers", icon: Shield, path: "/dashboard/trainers" },
     {
-      name: "Trainees",
+      name: "Students",
       icon: BarChart3,
       path: "/dashboard/trainees",
     },

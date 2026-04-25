@@ -85,7 +85,7 @@ const TraineesTable = () => {
       : 'bg-green-100 text-green-800';
   };
 
-  if (isLoading) return <div className="text-center py-10">Loading trainees...</div>;
+  if (isLoading) return <div className="text-center py-10">Loading students...</div>;
 
   return (
     <div className="lg:max-w-2xl xl:max-w-[1920px] mx-auto min-h-[calc(100vh-170px)] bg-white p-4 md:p-6 lg:p-8">
@@ -159,7 +159,7 @@ const TraineesTable = () => {
               {paginatedTrainees.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={9} className="text-center py-8 text-gray-500">
-                    No trainees found.
+                    No students found.
                   </TableCell>
                 </TableRow>
               )}
@@ -249,7 +249,7 @@ const TraineesTable = () => {
         <Dialog open={showProfileDialog} onOpenChange={setShowProfileDialog}>
           <DialogContent className="sm:max-w-2xl max-h-screen overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="text-2xl font-bold">Trainee Details</DialogTitle>
+              <DialogTitle className="text-2xl font-bold">Student Details</DialogTitle>
             </DialogHeader>
 
             {selectedTrainee && (

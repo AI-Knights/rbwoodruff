@@ -93,6 +93,20 @@ export const agencyApiSlice = api.injectEndpoints({
             }),
             invalidatesTags: ["Case", "User", "Dashboard"],
         }),
+        addIndividualCase: builder.mutation<AgencyCaseLoad, {
+            email: string;
+            case_id: string;
+            court_name: string;
+            court_date: string | null;
+            status: string;
+        }>({
+            query: (data) => ({
+                url: "/agency/cases/",
+                method: "POST",
+                body: data,
+            }),
+            invalidatesTags: ["Case", "Dashboard", "User"],
+        }),
     }),
 });
 
@@ -103,5 +117,6 @@ export const {
     useGetUserRosterQuery,
     useGetAuditLogsQuery,
     useUpdateAgencyCaseMutation,
-    useDeleteAgencyCaseMutation
+    useDeleteAgencyCaseMutation,
+    useAddIndividualCaseMutation,
 } = agencyApiSlice;

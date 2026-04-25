@@ -108,7 +108,7 @@ const TrainerTable = () => {
     }
   };
 
-  if (isLoading) return <div className="text-center py-10">Loading trainers...</div>;
+  if (isLoading) return <div className="text-center py-10">Loading training providers...</div>;
 
   return (
     <div className="lg:max-w-2xl xl:max-w-[1920px] mx-auto min-h-[calc(100vh-170px)] bg-white p-4 md:p-6 lg:p-8">
@@ -144,7 +144,7 @@ const TrainerTable = () => {
               <thead className="bg-gray-50 border-b">
                 <tr>
                   <th className="px-6 py-5 text-left text-sm font-semibold text-gray-900">Email</th>
-                  <th className="px-6 py-5 text-left text-sm font-semibold text-gray-900">Trainer Name</th>
+                  <th className="px-6 py-5 text-left text-sm font-semibold text-gray-900">Training Provider Name</th>
                   <th className="px-6 py-5 text-left text-sm font-semibold text-gray-900">Specialization</th>
                   <th className="px-6 py-5 text-left text-sm font-semibold text-gray-900">Experience</th>
                   <th className="px-6 py-5 text-left text-sm font-semibold text-gray-900">Total Programs</th>
@@ -308,12 +308,12 @@ const TrainerTable = () => {
         <Dialog open={showProfileDialog} onOpenChange={setShowProfileDialog}>
           <DialogContent className="sm:max-w-lg">
             <DialogHeader className="flex flex-row items-center justify-between pb-4">
-              <DialogTitle className="text-xl font-semibold">Trainer Profile</DialogTitle>
+              <DialogTitle className="text-xl font-semibold">Training Provider Profile</DialogTitle>
             </DialogHeader>
             {selectedTrainer && (
               <div className="grid grid-cols-2 gap-6 pt-2">
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Trainer Name</p>
+                  <p className="text-sm text-gray-600 mb-1">Provider Name</p>
                   <p className="font-semibold">{selectedTrainer.trainer_name}</p>
                 </div>
                 <div>
@@ -352,7 +352,7 @@ const TrainerTable = () => {
         <AlertDialog open={showSuspendDialog} onOpenChange={setShowSuspendDialog}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle className="text-xl font-semibold">Suspend Trainer</AlertDialogTitle>
+              <AlertDialogTitle className="text-xl font-semibold">Suspend Training Provider</AlertDialogTitle>
               <AlertDialogDescription className="text-base pt-2">
                 Are you sure you want to suspend {selectedTrainer?.trainer_name}?
                 <br />
@@ -376,7 +376,7 @@ const TrainerTable = () => {
         <AlertDialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle className="text-xl font-semibold">Approve Trainer</AlertDialogTitle>
+              <AlertDialogTitle className="text-xl font-semibold">Approve Training Provider</AlertDialogTitle>
               <AlertDialogDescription className="text-base pt-2">
                 Are you sure you want to approve {selectedTrainer?.trainer_name}?
               </AlertDialogDescription>
